@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>동요 친구</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" crossorigin="anonymous"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#D8F5E8;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji'}
+img.emoji{height:1em;width:1em;margin:0 .04em;vertical-align:-0.1em;display:inline-block}
+.W{position:relative;width:780px;height:580px;border-radius:26px;overflow:hidden;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji';color:#1E1E1E;transition:background .5s;box-shadow:0 22px 64px rgba(0,0,0,.16)}
+.dc{position:absolute;border-radius:50%;pointer-events:none}
+.abar{position:absolute;top:0;left:0;right:0;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;z-index:5}
+.cbtn{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.85);border:.5px solid rgba(0,0,0,.1);border-radius:22px;padding:7px 13px 7px 11px;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit;color:#1E1E1E;transition:background .15s}
+.cbtn:hover{background:rgba(255,255,255,.98)}
+.spil{background:rgba(255,255,255,.85);border-radius:22px;padding:7px 15px;font-size:14px;font-weight:700}
+.bub{position:absolute;left:50%;top:10%;transform:translateX(-50%);background:white;border:.5px solid rgba(0,0,0,.1);border-radius:18px;padding:10px 22px;font-size:19px;font-weight:800;color:#1E1E1E;pointer-events:none;z-index:4;transition:left .4s cubic-bezier(.4,0,.2,1);max-width:400px;text-align:center;line-height:1.35}
+.bub.sh{left:30%}
+.bub::after{content:'';position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);border:10px solid transparent;border-top-color:white;border-bottom:none}
+.cmp{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);z-index:3;transition:left .4s cubic-bezier(.4,0,.2,1)}
+.cmp.sh{left:30%}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+@keyframes exc{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-13px) rotate(4deg)}}
+@keyframes swy{0%,100%{transform:rotate(-11deg)}50%{transform:rotate(11deg)}}
+@keyframes cel{0%{transform:scale(1)}25%{transform:scale(1.2) rotate(-9deg)}75%{transform:scale(1.2) rotate(9deg)}100%{transform:scale(1)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes notedrift{0%,100%{transform:translateY(0) scale(1);opacity:1}50%{transform:translateY(-8px) scale(1.1);opacity:.6}}
+.an-b{animation:bob 3.2s ease-in-out infinite}
+.an-e{animation:exc .85s ease-in-out infinite}
+.an-s{animation:swy .9s ease-in-out infinite}
+.an-c{animation:cel .7s ease-in-out 4}
+.dock{position:absolute;bottom:0;left:0;right:0;padding:10px 22px 15px;display:flex;gap:11px;justify-content:center;background:rgba(255,255,255,.92);border-top:.5px solid rgba(0,0,0,.06);z-index:5}
+.db{flex:1;max-width:170px;padding:12px 8px;border-radius:18px;border:3px solid transparent;cursor:pointer;font-size:13px;font-weight:800;display:flex;flex-direction:column;align-items:center;gap:5px;transition:transform .15s,border-color .2s;font-family:inherit;line-height:1.3}
+.db i{font-size:26px}
+.db:active{transform:scale(.94)}
+.d1{background:#DCF1FF;color:#0E68AB}
+.d2{background:#DFFAEA;color:#0A7840}
+.d3{background:#FFF0DC;color:#A05A00}
+.pnl{position:absolute;right:0;top:0;height:100%;width:0;background:white;border-left:.5px solid rgba(0,0,0,.08);border-radius:0 26px 26px 0;overflow:hidden;transition:width .38s cubic-bezier(.4,0,.2,1);z-index:6}
+.pnl.op{width:310px}
+.pin{width:310px;height:100%;overflow-y:auto;padding:17px 16px 95px}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ptit{font-size:16px;font-weight:800;color:#1E1E1E}
+.px{background:none;border:none;cursor:pointer;color:#888;font-size:21px;padding:4px;border-radius:8px;line-height:1;font-family:inherit}
+.px:hover{background:#F0F0F0}
+.sdots{display:flex;gap:8px;justify-content:center;margin-bottom:16px;align-items:center}
+.big-inp{width:100%;padding:17px;border-radius:18px;border:3px solid rgba(0,0,0,.1);font-size:22px;font-family:inherit;color:#1E1E1E;background:white;outline:none;text-align:center;margin-bottom:6px}
+.big-inp:focus{border-color:#48CA02}
+.big-inp::placeholder{color:#CCC;font-size:18px}
+.big-next{width:100%;padding:17px;border-radius:18px;border:none;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit;color:white;margin-top:12px;transition:filter .15s,transform .1s}
+.chgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.chbtn{padding:18px 8px 16px;border-radius:18px;border:3px solid rgba(0,0,0,.08);background:#F6F6F4;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:16px;font-weight:800;font-family:inherit;color:#1E1E1E;transition:all .18s;width:100%}
+.chbtn .cem{font-size:36px;line-height:1;display:flex;align-items:center;justify-content:center;height:40px}
+.chbtn:hover{background:#EFEFED}
+.colgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+.colsw{aspect-ratio:1;border-radius:16px;cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding-bottom:9px;border:4px solid transparent;transition:all .18s}
+.colsw:hover{transform:scale(1.06)}
+.colsw.sl{border-color:#1E1E1E;transform:scale(1.1)}
+.col-lbl{font-size:12px;color:white;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.abtn{width:100%;padding:15px;border-radius:16px;border:none;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;color:white;margin-top:14px;transition:filter .15s,transform .1s}
+.abtn:hover{filter:brightness(.9)}
+.abtn:active{transform:scale(.97)}
+.altb{width:100%;padding:12px;border-radius:14px;border:2.5px solid rgba(0,0,0,.1);background:white;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:#666;margin-top:10px}
+.altb:hover{background:#F0F0F0}
+.di-btn{width:100%;padding:13px;border-radius:14px;border:2.5px dashed rgba(0,0,0,.16);background:transparent;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:#888;margin-top:10px;transition:all .15s}
+.di-btn:hover{background:#F0F0EE;border-style:solid;color:#444}
+.hg{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.hc{padding:15px 10px 13px;border-radius:18px;cursor:pointer;text-align:center;border:3px solid transparent;transition:all .18s;font-family:inherit;width:100%}
+.hc:hover{filter:brightness(.95);border-color:rgba(0,0,0,.15)}
+.hem{font-size:36px;margin-bottom:6px;line-height:1;display:flex;align-items:center;justify-content:center;height:42px}
+.hnm{font-size:16px;font-weight:800;color:#1E1E1E}
+.htm{font-size:13px;color:#888;font-weight:600;margin-top:3px}
+.cag{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:13px}
+.cdl{text-align:center;font-size:11px;color:#888;font-weight:700;padding:4px 0}
+.cdy{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#F0F0EE}
+.cdy.mt{background:transparent}
+.cdy .ds{font-size:14px;line-height:1.2}
+.cdy .dn{font-size:10px;color:#888;font-weight:600;line-height:1}
+.ov{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .28s,visibility .28s}
+.ov.hid{opacity:0;visibility:hidden;pointer-events:none}
+.og{display:flex;gap:13px;justify-content:center}
+.co{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;padding:13px 15px;border-radius:20px;border:3.5px solid transparent;background:rgba(255,255,255,.75);transition:all .2s}
+.co:hover{background:rgba(255,255,255,.97)}
+.co.sl{background:white}
+.cnm{font-size:14px;font-weight:800;color:#1E1E1E}
+.ctp{font-size:12px;color:#888;font-weight:600}
+.cok{padding:14px 35px;border-radius:26px;border:none;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;color:white;transition:filter .15s}
+.cok:hover{filter:brightness(.9)}
+/* Habit overlay */
+.hov{position:absolute;inset:0;z-index:15;display:flex;flex-direction:column;align-items:center;transition:opacity .35s,visibility .35s}
+.hov.hid{opacity:0;visibility:hidden;pointer-events:none}
+.hov-top{width:100%;flex-shrink:0;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+.hov-body{flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 28px;overflow:hidden}
+.hov-bot{width:100%;flex-shrink:0;padding:8px 24px 18px;display:flex;flex-direction:column;gap:9px}
+.hov-dots{display:flex;gap:8px;align-items:center}
+.hov-exit{background:rgba(255,255,255,.82);border:none;border-radius:22px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;color:#1E1E1E;display:flex;align-items:center;gap:6px;transition:background .15s}
+.hov-exit:hover{background:rgba(255,255,255,.98)}
+.song-card{background:rgba(255,255,255,.85);border-radius:18px;padding:13px 20px;width:100%;max-width:430px;text-align:center}
+.song-card-lbl{font-size:12px;font-weight:700;color:#888;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:6px}
+.song-card-ttl{font-size:16px;font-weight:800;color:#1E1E1E}
+.playing-dot{width:8px;height:8px;border-radius:50%;display:inline-block;animation:pulse 1.2s ease-in-out infinite}
+.note-float{font-size:18px;animation:notedrift 1.8s ease-in-out infinite;display:inline-block}
+.note-float:nth-child(2){animation-delay:.6s}
+.note-float:nth-child(3){animation-delay:1.2s}
+.hov-timer-wrap{position:relative;width:158px;height:158px;flex-shrink:0}
+.hov-timer-wrap svg{width:100%;height:100%}
+.hov-timer-txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hov-tnum{font-size:36px;font-weight:800;color:#1E1E1E;line-height:1}
+.hov-tlbl{font-size:11px;color:#888;font-weight:600;margin-top:3px}
+.hov-lyr{background:rgba(255,255,255,.78);border-radius:16px;padding:13px 20px;width:100%;max-width:430px;text-align:center;font-size:15px;font-weight:700;color:#333;line-height:1.9}
+.hov-big-btn{width:100%;padding:17px;border-radius:18px;border:none;font-size:18px;font-weight:800;cursor:pointer;font-family:inherit;color:white;transition:filter .15s,transform .1s}
+.hov-big-btn:hover{filter:brightness(.9)}
+.hov-big-btn:active{transform:scale(.97)}
+.hov-alt-btn{width:100%;padding:13px;border-radius:14px;border:2.5px solid rgba(0,0,0,.12);background:rgba(255,255,255,.75);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:#444;transition:background .15s}
+.hov-alt-btn:hover{background:rgba(255,255,255,.97)}
+.hov-demo{font-size:11px;font-weight:700;color:rgba(0,0,0,.3);text-align:center}
+
+/* ══ SEQUENCE OVERLAY ══ */
+.seq-ov{position:absolute;inset:0;z-index:16;overflow:hidden;transition:opacity .4s,visibility .4s}
+.seq-ov.hid{opacity:0;visibility:hidden;pointer-events:none}
+/* Scene halves */
+.seq-room{position:absolute;top:0;left:0;width:52%;height:100%;overflow:hidden}
+.seq-bath{position:absolute;top:0;right:0;width:52%;height:100%;overflow:hidden}
+/* Door frame between scenes */
+.seq-door-wrap{position:absolute;top:0;left:calc(52% - 32px);width:64px;height:100%;z-index:1}
+.seq-door-frame{position:absolute;inset:0;background:#C8A06A}
+.seq-door-panel{position:absolute;top:0;left:7px;right:7px;bottom:0;background:#B88A50}
+.seq-door-arch{position:absolute;top:0;left:5px;right:5px;height:40px;background:#C8A06A;border-radius:0 0 50% 50%}
+.seq-door-handle{position:absolute;right:14px;top:48%;width:9px;height:9px;border-radius:50%;background:#8B6914}
+.seq-door-hinge-t{position:absolute;left:10px;top:15%;width:6px;height:14px;background:#A88040;border-radius:2px}
+.seq-door-hinge-b{position:absolute;left:10px;top:70%;width:6px;height:14px;background:#A88040;border-radius:2px}
+/* Character */
+.seq-cw{position:absolute;bottom:110px;left:60px;transition:none;z-index:3}
+.seq-cw-inner{position:relative;display:inline-block}
+.seq-bub{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%) translateY(8px) scale(.9);background:white;border:.5px solid rgba(0,0,0,.1);border-radius:16px;padding:9px 16px;font-size:15px;font-weight:800;white-space:nowrap;color:#1E1E1E;opacity:0;transition:opacity .4s,transform .4s;pointer-events:none}
+.seq-bub.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+.seq-bub::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:9px solid transparent;border-top-color:white;border-bottom:none}
+.seq-note{position:absolute;font-size:20px;animation:notedrift 1.6s ease-in-out infinite;opacity:0;transition:opacity .3s}
+.seq-note.show{opacity:1}
+.seq-wave{position:absolute;right:-18px;top:8px;font-size:28px;opacity:0;transform:rotate(-20deg);transition:opacity .3s;transform-origin:bottom center}
+.seq-wave.show{opacity:1;animation:waveHand .5s ease-in-out infinite}
+@keyframes waveHand{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(25deg)}}
+@keyframes walkBob{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-10px) rotate(-2deg)}75%{transform:translateY(-10px) rotate(2deg)}}
+.seq-walking{animation:walkBob .46s ease-in-out infinite}
+@keyframes beckonBounce{0%,100%{transform:scale(1)}40%{transform:scale(1.1) translateX(7px)}70%{transform:scale(1.05) translateX(3px)}}
+.seq-beckoning{animation:beckonBounce .9s ease-in-out 3}
+/* Walking leg/arm swing — uses transform-box: fill-box for correct SVG pivot */
+.seq-ll{transform-box:fill-box;transform-origin:50% 0%}
+.seq-lr{transform-box:fill-box;transform-origin:50% 0%}
+.seq-al{transform-box:fill-box;transform-origin:50% 0%}
+@keyframes legSwL{0%,100%{transform:rotate(14deg)}50%{transform:rotate(-14deg)}}
+@keyframes legSwR{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}
+@keyframes armSwL{0%,100%{transform:rotate(-15deg)}50%{transform:rotate(15deg)}}
+.walk-ll{animation:legSwL .46s ease-in-out infinite}
+.walk-lr{animation:legSwR .46s ease-in-out infinite}
+.walk-al{animation:armSwL .46s ease-in-out infinite}
+/* Footprints */
+.seq-fp{position:absolute;font-size:20px;opacity:0;transition:opacity .35s}
+/* Topbar */
+.seq-topbar{position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;z-index:4}
+.seq-title{font-size:14px;font-weight:700;color:rgba(0,0,0,.4)}
+.seq-exit-btn{background:rgba(255,255,255,.82);border:none;border-radius:22px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;color:#1E1E1E}
+/* Phase dots */
+.seq-phase-dots{position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;z-index:4}
+/* Bathroom arrival cue box */
+.seq-cue-box{position:absolute;right:80px;bottom:118px;background:rgba(255,255,255,.9);border-radius:16px;padding:12px 16px;font-size:13px;font-weight:700;color:#1E1E1E;opacity:0;transition:opacity .5s;text-align:center;max-width:150px;border:.5px solid rgba(0,0,0,.1);z-index:3}
+.seq-cue-box.show{opacity:1}
+/* CTA */
+.seq-cta{position:absolute;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);text-align:center;opacity:0;transition:opacity .5s,transform .5s;pointer-events:none;z-index:4}
+.seq-cta.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.seq-cta-btn{padding:16px 40px;border-radius:24px;border:none;font-size:18px;font-weight:800;cursor:pointer;font-family:inherit;color:white;box-shadow:0 6px 20px rgba(0,0,0,.15);transition:filter .15s,transform .1s}
+.seq-cta-btn:hover{filter:brightness(.9)}
+.seq-cta-btn:active{transform:scale(.97)}
+.seq-cta-hint{font-size:13px;font-weight:600;color:rgba(0,0,0,.4);margin-top:8px}
+/* ── Brushing action animations ── */
+@keyframes brushAct{0%,100%{transform:translateX(-13px)}50%{transform:translateX(13px)}}
+@keyframes foamRise{0%{opacity:0;transform:translateY(0) scale(.4)}45%{opacity:.82;transform:translateY(-6px) scale(1.05)}100%{opacity:0;transform:translateY(-16px) scale(1.35)}}
+@keyframes teethShow{0%,100%{opacity:.85}50%{opacity:1}}
+</style>
+</head>
+<body>
+<div class="W" id="W">
+<div id="bgd"></div>
+<div class="abar">
+  <div style="font-size:15px;font-weight:800;display:flex;align-items:center;gap:7px"><i class="ti ti-music" style="font-size:18px"></i>동요 친구</div>
+  <div style="display:flex;align-items:center;gap:9px">
+    <button class="cbtn" id="cbtn" onclick="showO()"><span id="cbnm">토리</span><i class="ti ti-chevron-down" style="font-size:12px"></i></button>
+    <div class="spil">⭐ <span id="sv">14</span></div>
+  </div>
+</div>
+<div class="bub" id="bub">안녕 친구! 오늘은 뭘 해볼까요? 😊</div>
+<div class="cmp" id="cmp"><div id="can" class="an-b"><div id="csv"></div></div></div>
+<div class="dock">
+  <button class="db d1" id="bp" onclick="oP('p')"><i class="ti ti-user-heart"></i>나에 대해<br>알려줘</button>
+  <button class="db d2" id="bh" onclick="oP('h')"><i class="ti ti-rocket"></i>같이<br>해봐요!</button>
+  <button class="db d3" id="bc" onclick="oP('c')"><i class="ti ti-calendar-heart"></i>내<br>도장판</button>
+</div>
+<div class="pnl" id="pnl"><div class="pin"><div class="ph"><span class="ptit" id="pt"></span><button class="px" onclick="cP()"><i class="ti ti-x"></i></button></div><div id="pb"></div></div></div>
+<div class="ov hid" id="ov">
+  <div style="font-size:18px;font-weight:800;color:#1E1E1E">함께할 친구를 골라봐요! 🐾</div>
+  <div class="og" id="og"></div>
+  <button class="cok" id="cok" onclick="hideO()">선택 완료! 🎉</button>
+</div>
+<div class="hov hid" id="hov">
+  <div class="hov-top"><div class="hov-dots" id="hov-dots"></div><button class="hov-exit" id="hov-exit"></button></div>
+  <div class="hov-body" id="hov-body"></div>
+  <div class="hov-bot" id="hov-bot"></div>
+</div>
+
+<!-- ══ SEQUENCE OVERLAY ══ -->
+<div class="seq-ov hid" id="seq-ov">
+
+  <!-- ROOM (left side) — SVG-drawn scene -->
+  <div class="seq-room">
+    <svg viewBox="0 0 407 580" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="woodFloor" x="0" y="0" width="80" height="22" patternUnits="userSpaceOnUse">
+          <rect width="80" height="22" fill="#C89060"/>
+          <rect width="80" height="22" fill="none" stroke="#A87040" stroke-width="1.5" stroke-opacity=".5"/>
+          <line x1="0" y1="0" x2="0" y2="22" stroke="#9A6030" stroke-width="1" stroke-opacity=".35"/>
+        </pattern>
+      </defs>
+      <!-- Wall -->
+      <rect width="407" height="430" fill="#FFF0DC"/>
+      <!-- Subtle wall wainscoting -->
+      <rect x="0" y="310" width="407" height="6" fill="#F0D8B8" opacity=".7"/>
+      <rect x="0" y="310" width="407" height="120" fill="#FAE8D0" opacity=".35"/>
+
+      <!-- WINDOW -->
+      <rect x="36" y="30" width="138" height="168" rx="5" fill="#B8E4FF"/>
+      <!-- Sky gradient feel -->
+      <rect x="36" y="30" width="138" height="60" fill="#C8EDFF" opacity=".5"/>
+      <!-- Clouds -->
+      <ellipse cx="72" cy="72" rx="26" ry="12" fill="white" opacity=".88"/>
+      <ellipse cx="90" cy="65" rx="18" ry="12" fill="white" opacity=".88"/>
+      <ellipse cx="140" cy="85" rx="22" ry="11" fill="white" opacity=".88"/>
+      <ellipse cx="124" cy="78" rx="15" ry="10" fill="white" opacity=".88"/>
+      <!-- Sun -->
+      <circle cx="152" cy="47" r="18" fill="#FFD740" opacity=".78"/>
+      <circle cx="152" cy="47" r="12" fill="#FFE066" opacity=".6"/>
+      <!-- Tree tops outside -->
+      <ellipse cx="55" cy="175" rx="18" ry="24" fill="#6DB85A" opacity=".7"/>
+      <ellipse cx="42" cy="182" rx="14" ry="18" fill="#5AA848" opacity=".6"/>
+      <!-- Window frame -->
+      <rect x="30" y="24" width="150" height="180" rx="7" fill="none" stroke="#C4A060" stroke-width="9"/>
+      <!-- Cross bars -->
+      <line x1="105" y1="24" x2="105" y2="204" stroke="#C4A060" stroke-width="5"/>
+      <line x1="30" y1="114" x2="180" y2="114" stroke="#C4A060" stroke-width="5"/>
+      <!-- Curtain rod -->
+      <rect x="10" y="18" width="190" height="9" rx="4.5" fill="#B89060"/>
+      <circle cx="10" cy="22" r="5" fill="#9A7040"/>
+      <circle cx="200" cy="22" r="5" fill="#9A7040"/>
+      <!-- Left curtain -->
+      <path d="M30 27 Q14 100 20 204" fill="#F0A878" opacity=".85"/>
+      <path d="M30 27 Q22 100 26 204" fill="#D88858" opacity=".55"/>
+      <!-- Right curtain -->
+      <path d="M180 27 Q196 100 190 204" fill="#F0A878" opacity=".85"/>
+      <path d="M180 27 Q188 100 184 204" fill="#D88858" opacity=".55"/>
+
+      <!-- SOFA -->
+      <!-- Back cushion row -->
+      <rect x="8" y="278" width="248" height="78" rx="18" fill="#D07B5A"/>
+      <!-- Back cushion dividers -->
+      <line x1="92" y1="280" x2="92" y2="354" stroke="#BB6040" stroke-width="2" opacity=".5"/>
+      <line x1="175" y1="280" x2="175" y2="354" stroke="#BB6040" stroke-width="2" opacity=".5"/>
+      <!-- Back cushions highlight -->
+      <rect x="14" y="284" width="72" height="10" rx="5" fill="#E89070" opacity=".5"/>
+      <rect x="97" y="284" width="72" height="10" rx="5" fill="#E89070" opacity=".5"/>
+      <rect x="180" y="284" width="66" height="10" rx="5" fill="#E89070" opacity=".5"/>
+      <!-- Sofa seat -->
+      <rect x="4" y="340" width="256" height="96" rx="14" fill="#E8916A"/>
+      <!-- Seat cushions -->
+      <rect x="46" y="348" width="76" height="82" rx="10" fill="#F0A07A"/>
+      <rect x="132" y="348" width="76" height="82" rx="10" fill="#F0A07A"/>
+      <!-- Cushion highlights -->
+      <rect x="50" y="352" width="32" height="7" rx="3.5" fill="#F8C0A0" opacity=".6"/>
+      <rect x="136" y="352" width="32" height="7" rx="3.5" fill="#F8C0A0" opacity=".6"/>
+      <!-- Seat crease lines -->
+      <line x1="122" y1="342" x2="122" y2="436" stroke="#D07858" stroke-width="2" opacity=".4"/>
+      <!-- Armrests -->
+      <rect x="4" y="334" width="46" height="102" rx="14" fill="#C87058"/>
+      <rect x="214" y="334" width="46" height="102" rx="14" fill="#C87058"/>
+      <!-- Armrest tops -->
+      <rect x="4" y="334" width="46" height="12" rx="8" fill="#D88068"/>
+      <rect x="214" y="334" width="46" height="12" rx="8" fill="#D88068"/>
+      <!-- Sofa legs -->
+      <rect x="12" y="430" width="14" height="20" rx="5" fill="#7A5030"/>
+      <rect x="238" y="430" width="14" height="20" rx="5" fill="#7A5030"/>
+
+      <!-- RUG in front of sofa -->
+      <ellipse cx="128" cy="437" rx="118" ry="13" fill="#E8A05A" opacity=".45"/>
+      <ellipse cx="128" cy="437" rx="88" ry="9" fill="none" stroke="#C87838" stroke-width="2.5" opacity=".4"/>
+      <ellipse cx="128" cy="437" rx="55" ry="5.5" fill="none" stroke="#C87838" stroke-width="2" opacity=".35"/>
+
+      <!-- SIDE TABLE (right) -->
+      <rect x="288" y="350" width="110" height="12" rx="5" fill="#C09858"/>
+      <rect x="295" y="362" width="10" height="78" rx="4" fill="#A87840"/>
+      <rect x="379" y="362" width="10" height="78" rx="4" fill="#A87840"/>
+      <rect x="295" y="398" width="94" height="7" rx="3" fill="#B89050"/>
+      <!-- LAMP on table -->
+      <rect x="333" y="312" width="8" height="40" rx="3" fill="#C4A060"/>
+      <!-- Lamp shade -->
+      <path d="M312 316 L320 312 L358 312 L366 316 Z" fill="#F0C860"/>
+      <path d="M314 316 L354 316" stroke="#D8A840" stroke-width="1" opacity=".5"/>
+      <!-- Lamp glow -->
+      <ellipse cx="339" cy="318" rx="30" ry="6" fill="#FFE880" opacity=".18"/>
+      <!-- Book on lower shelf -->
+      <rect x="298" y="389" width="22" height="10" rx="2" fill="#5B9FDA" opacity=".8"/>
+      <rect x="323" y="387" width="18" height="12" rx="2" fill="#F5962A" opacity=".8"/>
+      <rect x="344" y="388" width="16" height="11" rx="2" fill="#84CC3C" opacity=".8"/>
+
+      <!-- PICTURE FRAME -->
+      <rect x="218" y="36" width="116" height="82" rx="6" fill="#D4B878"/>
+      <rect x="225" y="43" width="102" height="68" rx="3" fill="#A8C8DC"/>
+      <!-- Landscape in picture: mountains + sky -->
+      <rect x="225" y="43" width="102" height="35" fill="#94C8E8" opacity=".7"/>
+      <polygon points="225,111 252,72 278,111" fill="#8098B0"/>
+      <polygon points="258,111 290,78 325,111" fill="#90A8C0"/>
+      <polygon points="245,78 252,72 259,80" fill="white" opacity=".8"/>
+      <polygon points="283,85 290,78 297,86" fill="white" opacity=".8"/>
+      <circle cx="302" cy="54" r="11" fill="#FFD740" opacity=".72"/>
+      <!-- Frame border -->
+      <rect x="218" y="36" width="116" height="82" rx="6" fill="none" stroke="#C4A060" stroke-width="7"/>
+
+      <!-- TOY on floor near sofa -->
+      <rect x="260" y="408" width="30" height="24" rx="5" fill="#5B9FDA" opacity=".8"/>
+      <rect x="260" y="408" width="30" height="8" rx="5" fill="#3877F7" opacity=".8"/>
+      <circle cx="264" cy="432" r="5" fill="#888"/>
+      <circle cx="286" cy="432" r="5" fill="#888"/>
+
+      <!-- WOOD FLOOR -->
+      <rect x="0" y="430" width="407" height="150" fill="url(#woodFloor)"/>
+      <!-- Baseboard -->
+      <rect x="0" y="424" width="407" height="10" fill="#E8D0A8"/>
+      <!-- Floor shadow from sofa/table -->
+      <ellipse cx="128" cy="436" rx="128" ry="5" fill="rgba(0,0,0,.08)"/>
+    </svg>
+  </div>
+
+  <!-- BATHROOM (right side) — SVG-drawn scene -->
+  <div class="seq-bath">
+    <svg viewBox="0 0 407 580" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <!-- Wall tiles: 36×36 white squares with light blue grout -->
+        <pattern id="wallTile" x="0" y="0" width="36" height="36" patternUnits="userSpaceOnUse">
+          <rect width="36" height="36" fill="#EEF5F8"/>
+          <rect x=".5" y=".5" width="35" height="35" fill="none" stroke="#CFE3EB" stroke-width="1.5"/>
+        </pattern>
+        <!-- Floor tiles: 22×22 checkerboard -->
+        <pattern id="floorTile" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
+          <rect width="44" height="44" fill="#E4EFF3"/>
+          <rect width="22" height="22" fill="#D2E6EC"/>
+          <rect x="22" y="22" width="22" height="22" fill="#D2E6EC"/>
+          <rect width="44" height="44" fill="none" stroke="#C0D8E0" stroke-width=".5"/>
+        </pattern>
+      </defs>
+
+      <!-- Wall tiles -->
+      <rect width="407" height="440" fill="url(#wallTile)"/>
+      <!-- Lower wall accent: slightly warmer tone -->
+      <rect x="0" y="300" width="407" height="140" fill="#E8F2F6" opacity=".4"/>
+
+      <!-- MIRROR -->
+      <!-- Mirror back glow -->
+      <rect x="82" y="55" width="244" height="196" rx="10" fill="#B8D8E8" opacity=".35"/>
+      <!-- Mirror frame (dark border, rounded) -->
+      <rect x="78" y="51" width="252" height="204" rx="12" fill="none" stroke="#90B8C8" stroke-width="9"/>
+      <!-- Mirror surface -->
+      <rect x="84" y="57" width="240" height="192" rx="8" fill="#D8EEF5" opacity=".65"/>
+      <!-- Mirror highlights -->
+      <rect x="90" y="63" width="26" height="100" rx="5" fill="white" opacity=".22"/>
+      <rect x="122" y="63" width="8" height="40" rx="3" fill="white" opacity=".12"/>
+      <!-- Light fixture above mirror -->
+      <rect x="148" y="38" width="112" height="16" rx="5" fill="#E0E8EC"/>
+      <ellipse cx="172" cy="46" rx="7" ry="5" fill="#FFFDE0" opacity=".9"/>
+      <ellipse cx="204" cy="46" rx="7" ry="5" fill="#FFFDE0" opacity=".9"/>
+      <ellipse cx="236" cy="46" rx="7" ry="5" fill="#FFFDE0" opacity=".9"/>
+      <rect x="148" y="38" width="112" height="16" rx="5" fill="none" stroke="#C8D8DC" stroke-width="1.5"/>
+
+      <!-- VANITY COUNTER -->
+      <!-- Counter slab -->
+      <rect x="58" y="294" width="292" height="22" rx="5" fill="#D8E8EE"/>
+      <rect x="58" y="294" width="292" height="8" rx="5" fill="#E4EFF3"/>
+      <!-- Cabinet body -->
+      <rect x="64" y="314" width="280" height="126" rx="7" fill="#F0F7FA"/>
+      <!-- Cabinet doors -->
+      <rect x="70" y="320" width="124" height="114" rx="6" fill="#F8FCFE"/>
+      <rect x="70" y="320" width="124" height="114" rx="6" fill="none" stroke="#C8DCE4" stroke-width="1.5"/>
+      <rect x="214" y="320" width="124" height="114" rx="6" fill="#F8FCFE"/>
+      <rect x="214" y="320" width="124" height="114" rx="6" fill="none" stroke="#C8DCE4" stroke-width="1.5"/>
+      <!-- Door handles -->
+      <rect x="180" y="372" width="14" height="8" rx="4" fill="#B0C8D4"/>
+      <rect x="215" y="372" width="14" height="8" rx="4" fill="#B0C8D4"/>
+
+      <!-- SINK BASIN -->
+      <!-- Sink outer rim -->
+      <rect x="120" y="269" width="168" height="28" rx="32" fill="#C8DDE8"/>
+      <!-- Sink interior -->
+      <rect x="130" y="274" width="148" height="22" rx="27" fill="#B0CDD8"/>
+      <!-- Drain -->
+      <circle cx="204" cy="283" r="7" fill="#98B8C4"/>
+      <circle cx="204" cy="283" r="4" fill="#7898A8"/>
+      <!-- Faucet neck -->
+      <rect x="196" y="248" width="16" height="24" rx="5" fill="#C8D8DC"/>
+      <!-- Faucet spout arm -->
+      <rect x="186" y="246" width="36" height="7" rx="3.5" fill="#D4E0E4"/>
+      <!-- Hot/cold handles -->
+      <circle cx="183" cy="250" r="8" fill="#E8A8A8"/>
+      <circle cx="183" cy="250" r="4.5" fill="#D89090"/>
+      <circle cx="225" cy="250" r="8" fill="#A8C4E8"/>
+      <circle cx="225" cy="250" r="4.5" fill="#90AACC"/>
+
+      <!-- TOOTHBRUSH HOLDER on counter -->
+      <rect x="298" y="271" width="34" height="26" rx="10" fill="#C8DCE4"/>
+      <!-- Toothbrush in holder -->
+      <rect x="306" y="253" width="6" height="24" rx="3" fill="#5B9FDA"/>
+      <rect x="304" y="246" width="10" height="10" rx="3" fill="#7BC8EE"/>
+      <line x1="306" y1="248" x2="306" y2="241" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="309" y1="248" x2="309" y2="240" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="312" y1="248" x2="312" y2="241" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+      <!-- 2nd toothbrush (smaller) -->
+      <rect x="316" y="256" width="6" height="21" rx="3" fill="#F5962A"/>
+      <rect x="314" y="249" width="10" height="9" rx="3" fill="#FFB840"/>
+
+      <!-- SOAP DISPENSER -->
+      <rect x="342" y="278" width="28" height="20" rx="9" fill="#D8C8E8"/>
+      <rect x="350" y="267" width="12" height="15" rx="6" fill="#C0B0D4"/>
+      <rect x="354" y="264" width="5" height="6" rx="2.5" fill="#B0A0C4"/>
+
+      <!-- TOWEL RAIL (left wall) -->
+      <!-- Brackets -->
+      <rect x="14" y="196" width="10" height="56" rx="4" fill="#B8C8D0"/>
+      <rect x="14" y="196" width="10" height="14" rx="4" fill="#C8D8DC"/>
+      <rect x="14" y="238" width="10" height="14" rx="4" fill="#C8D8DC"/>
+      <!-- Rail -->
+      <rect x="20" y="210" width="58" height="7" rx="3.5" fill="#C8D8DC"/>
+      <!-- Towel hanging: fold at top, body below -->
+      <rect x="22" y="212" width="56" height="6" rx="3" fill="#7BC8EE" opacity=".8"/><!-- fold -->
+      <rect x="24" y="218" width="52" height="70" rx="6" fill="#A8D8F0" opacity=".85"/>
+      <!-- Towel stripe decoration -->
+      <rect x="24" y="250" width="52" height="8" rx="3" fill="#7BC8EE" opacity=".65"/>
+      <!-- Towel shadow -->
+      <rect x="24" y="286" width="52" height="4" rx="2" fill="#80A8B8" opacity=".25"/>
+
+      <!-- SMALL SHELF with plants / items -->
+      <rect x="320" y="155" width="76" height="10" rx="4" fill="#C8D8DC"/>
+      <rect x="320" y="165" width="4" height="30" rx="2" fill="#B8C8CC"/>
+      <rect x="392" y="165" width="4" height="30" rx="2" fill="#B8C8CC"/>
+      <!-- Small plant on shelf -->
+      <rect x="332" y="138" width="14" height="18" rx="4" fill="#C8A060"/>
+      <ellipse cx="339" cy="136" rx="12" ry="10" fill="#7DC840"/>
+      <ellipse cx="332" cy="140" rx="8" ry="7" fill="#90D850" opacity=".7"/>
+      <ellipse cx="346" cy="140" rx="8" ry="7" fill="#90D850" opacity=".7"/>
+      <!-- Candle on shelf -->
+      <rect x="358" y="141" width="12" height="16" rx="3" fill="#F0E0C8"/>
+      <line x1="364" y1="141" x2="364" y2="135" stroke="#C0A050" stroke-width="1.5" stroke-linecap="round"/>
+      <ellipse cx="364" cy="134" rx="2.5" ry="3.5" fill="#FFB830" opacity=".85"/>
+
+      <!-- FLOOR TILES -->
+      <rect x="0" y="440" width="407" height="140" fill="url(#floorTile)"/>
+      <!-- Baseboard -->
+      <rect x="0" y="432" width="407" height="10" fill="#D4E4EC"/>
+      <!-- Floor shadow from vanity -->
+      <ellipse cx="204" cy="442" rx="148" ry="5" fill="rgba(0,0,0,.07)"/>
+    </svg>
+  </div>
+
+  <!-- DOOR FRAME between scenes -->
+  <div class="seq-door-wrap">
+    <div class="seq-door-frame">
+      <div class="seq-door-panel">
+        <div class="seq-door-arch"></div>
+        <div class="seq-door-hinge-t"></div>
+        <div class="seq-door-hinge-b"></div>
+        <div class="seq-door-handle"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase dots -->
+  <div class="seq-phase-dots" id="seq-pdots"></div>
+  <!-- Topbar -->
+  <div class="seq-topbar">
+    <div class="seq-title" id="seq-title">🪥 양치 시간이에요!</div>
+    <button class="seq-exit-btn" onclick="exitSeq()">✕ 나가기</button>
+  </div>
+  <!-- Footprints -->
+  <div id="seq-trail" style="position:absolute;inset:0;pointer-events:none;z-index:2"></div>
+  <!-- Character -->
+  <div class="seq-cw" id="seq-cw">
+    <div class="seq-cw-inner" id="seq-cwi">
+      <div class="seq-bub" id="seq-bub"></div>
+      <div class="seq-note" id="seq-n1" style="right:-40px;top:-18px">🎵</div>
+      <div class="seq-note" id="seq-n2" style="right:-58px;top:-34px;animation-delay:.6s">🎶</div>
+      <div class="seq-wave" id="seq-wave">👋</div>
+      <div id="seq-char-svg"></div>
+    </div>
+  </div>
+  <!-- Bathroom cue box -->
+  <div class="seq-cue-box" id="seq-cue-box">
+    <div style="font-size:26px;margin-bottom:5px">🪥</div>
+    <div>여기서 같이<br>닦아요!</div>
+  </div>
+  <!-- CTA -->
+  <div class="seq-cta" id="seq-cta">
+    <button class="seq-cta-btn" id="seq-cta-btn" onclick="seqGoHabit()">같이 가요! 🚶</button>
+    <div class="seq-cta-hint">버튼을 눌러 같이 양치하러 가봐요!</div>
+  </div>
+</div><!-- end seq-ov -->
+
+</div><!-- .W -->
+<script>
+var PAL=[{nm:'주황',h:'#F5962A'},{nm:'노랑',h:'#FFCC2E'},{nm:'연두',h:'#BFCC28'},{nm:'연초록',h:'#84CC3C'},{nm:'민트',h:'#3ECFB2'},{nm:'하늘',h:'#7BC8EE'},{nm:'파랑',h:'#5B9FDA'},{nm:'남색',h:'#3877F7'},{nm:'보라',h:'#9279DF'},{nm:'분홍',h:'#FF8CAD'},{nm:'초록',h:'#48CA02'}];
+var CH=[
+  {id:0,nm:'토리',tp:'곰',acc:'#F5962A',bg:'#FFF4E2',dk:'#995500'},
+  {id:1,nm:'달이',tp:'토끼',acc:'#9279DF',bg:'#F2EEFF',dk:'#4A3590'},
+  {id:2,nm:'숲이',tp:'여우',acc:'#84CC3C',bg:'#EFF9E2',dk:'#3A6010'},
+  {id:3,nm:'뽀이',tp:'병아리',acc:'#3ECFB2',bg:'#E2FAF6',dk:'#0E6B5A'}
+];
+var PSTEPS=[
+  {q:'너의 이름이 뭐야? 👋',type:'text',key:'nm',ph:'이름을 알려줘!'},
+  {q:'어떤 게 제일 어려워? 😅',type:'grid',key:'hd',opts:[{em:'🪥',lb:'이 닦기'},{em:'🫧',lb:'손 씻기'},{em:'🛏️',lb:'이불 정리'},{em:'🧸',lb:'장난감 정리'},{em:'😴',lb:'일찍 자기'},{em:'🍽️',lb:'밥 잘 먹기'}]},
+  {q:'제일 좋아하는 음식은? 🍴',type:'grid',key:'fd',opts:[{em:'🍕',lb:'피자'},{em:'🍜',lb:'라면'},{em:'🌶️',lb:'떡볶이'},{em:'🍙',lb:'김밥'},{em:'🍗',lb:'치킨'},{em:'🍦',lb:'아이스크림'}]},
+  {q:'제일 좋아하는 색깔은? 🎨',type:'colors',key:'col'},
+  {q:'친한 친구 이름은? 👫',type:'text',key:'fr',ph:'친구 이름을 알려줘!'},
+  {q:null,type:'done'}
+];
+var HB=[
+  {id:'br',em:'🪥',nm:'이 닦기',rt:120,dt:15,bg:'#DCF1FF',pre:'"[N][JA], 이 닦자 시작!"',ply:'"[N][JA], 같이 닦아봐요!"',lyr:'이를 닦자 닦자 닦자\n위아래로 싹싹싹\n앞도 닦고 뒤도 닦고\n반짝반짝 웃어봐요!'},
+  {id:'ws',em:'🫧',nm:'손 씻기',rt:60,dt:10,bg:'#E2FAF6',pre:'"[N][JA], 손 씻자 시작!"',ply:'"[N][JA], 거품거품 씻어봐요!"',lyr:'손을 씻자 씻어요\n거품거품 뽀글뽀글\n손바닥 손등 사이사이\n깨끗하게 헹궈봐요!'},
+  {id:'sl',em:'🛏️',nm:'이불 정리',rt:90,dt:12,bg:'#F2EEFF',pre:'"[N][JA], 이불 개자!"',ply:'"[N][JA], 반듯반듯 같이 개자!"',lyr:'이불을 개자 접자\n반듯반듯 예쁘게\n베개도 올려 탕탕\n깨끗한 내 침대!'},
+  {id:'td',em:'🧸',nm:'장난감 정리',rt:120,dt:15,bg:'#FFF4E2',pre:'"[N][JA], 정리하자 시작!"',ply:'"[N][JA], 장난감아 집에 가자!"',lyr:'장난감아 집에 가자\n제자리에 쏙쏙쏙\n블록도 넣고 인형도\n모두 정리 완료!'}
+];
+var CAL={1:['br','ws'],2:['br'],3:['br','ws','sl'],5:['br'],6:['br','ws'],7:['br'],8:['br','ws'],9:['br','ws','td'],10:['br'],12:['br','ws'],13:['br','ws','sl']};
+var S={c:0,pan:null,ps:0,pdi:false,pf:{nm:'',hd:'',fd:'',col:'#F5962A',fr:''},hov:null,hab:null,ti:0,tm:0,int:null,st:14,seqT:[]};
+var nm=function(){return S.pf.nm||'친구';};
+function hasBatchim(n){if(!n||!n.length)return false;var c=n.charCodeAt(n.length-1);return c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28!==0;}
+var ya=function(){return hasBatchim(nm())?'아':'야';};
+var pr=function(s){var n=nm();return s.replace(/\[N\]/g,n).replace(/\[JA\]/g,hasBatchim(n)?'아':'야');};
+function emP(el){if(typeof twemoji!=='undefined'){twemoji.parse(el,{folder:'svg',ext:'.svg',base:'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/'.replace(/x/,'x')});}}
+
+/* ── FULL BODY SVG — path-based arms & legs, natural toothbrush hold ── */
+function gSFull(id,sz){
+  var s=sz||92;
+  /* BEAR (토리) */
+  if(id===0){var h=Math.round(s*1.68);return(
+    '<svg width="'+s+'" height="'+h+'" viewBox="0 0 100 168">'+
+    '<ellipse cx="50" cy="164" rx="26" ry="4.5" fill="#aaa" opacity=".28"/>'+
+    /* Body behind head */
+    '<circle cx="50" cy="116" r="27" fill="#C56B10"/>'+
+    /* Left arm — path curve, swings during walk (class seq-al) */
+    '<path class="seq-al" d="M26 110 Q10 124 13 136" fill="none" stroke="#E08028" stroke-width="12" stroke-linecap="round"/>'+
+    '<circle cx="13" cy="138" r="8" fill="#FFBE74"/>'+
+    /* Right arm — bent, holding toothbrush at chest */
+    '<path d="M74 110 Q90 126 87 116" fill="none" stroke="#F5962A" stroke-width="12" stroke-linecap="round"/>'+
+    '<circle cx="88" cy="112" r="8" fill="#FFBE74"/>'+
+    /* Toothbrush in right hand — held naturally at ~mid-torso, angled to mouth */
+    '<g class="seq-brush-el">'+
+      '<g transform="translate(88,112) rotate(-22)">'+
+        '<rect x="-2.5" y="-30" width="5" height="30" rx="2.5" fill="#5B9FDA"/>'+
+        '<rect x="-4.5" y="-43" width="9" height="14" rx="3" fill="#7BC8EE"/>'+
+        '<line x1="-2" y1="-43" x2="-2" y2="-54" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+        '<line x1="0.5" y1="-43" x2="0.5" y2="-55" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+        '<line x1="3" y1="-43" x2="3" y2="-54" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+      '</g>'+
+    '</g>'+
+    /* Left leg — path with foot, class seq-ll for walk anim */
+    '<path class="seq-ll" d="M38 140 Q32 154 35 164" fill="none" stroke="#C56B10" stroke-width="13" stroke-linecap="round"/>'+
+    '<ellipse class="seq-ll" cx="35" cy="164" rx="13" ry="6" fill="#C56B10" transform="rotate(-5 35 164)"/>'+
+    /* Right leg */
+    '<path class="seq-lr" d="M62 140 Q68 154 66 164" fill="none" stroke="#C56B10" stroke-width="13" stroke-linecap="round"/>'+
+    '<ellipse class="seq-lr" cx="66" cy="164" rx="13" ry="6" fill="#C56B10" transform="rotate(5 66 164)"/>'+
+    /* Ears */
+    '<circle cx="22" cy="28" r="14" fill="#C56B10"/>'+
+    '<circle cx="78" cy="28" r="14" fill="#C56B10"/>'+
+    '<circle cx="22" cy="28" r="8.5" fill="#FFBE74"/>'+
+    '<circle cx="78" cy="28" r="8.5" fill="#FFBE74"/>'+
+    /* Head on top */
+    '<circle cx="50" cy="53" r="40" fill="#F5962A"/>'+
+    '<ellipse cx="50" cy="58" rx="29" ry="24" fill="#FFBE74"/>'+
+    '<ellipse cx="37" cy="47" rx="9" ry="10.5" fill="white"/>'+
+    '<ellipse cx="63" cy="47" rx="9" ry="10.5" fill="white"/>'+
+    '<circle cx="39" cy="48" r="5.5" fill="#111"/>'+
+    '<circle cx="65" cy="48" r="5.5" fill="#111"/>'+
+    '<circle cx="41.5" cy="45.5" r="2" fill="white"/>'+
+    '<circle cx="67.5" cy="45.5" r="2" fill="white"/>'+
+    '<ellipse cx="50" cy="60" rx="6" ry="4" fill="#995500"/>'+
+    '<ellipse cx="30" cy="62" rx="8" ry="5" fill="#FFD5A8" opacity=".7"/>'+
+    '<ellipse cx="70" cy="62" rx="8" ry="5" fill="#FFD5A8" opacity=".7"/>'+
+    '<path d="M43 68Q50 75 57 68" stroke="#995500" stroke-width="2.5" fill="none" stroke-linecap="round"/>'+
+    '</svg>'
+  );}
+  /* BUNNY (달이) */
+  if(id===1){var h2=Math.round(s*1.95);return(
+    '<svg width="'+s+'" height="'+h2+'" viewBox="0 0 100 195">'+
+    '<ellipse cx="50" cy="191" rx="26" ry="4.5" fill="#aaa" opacity=".28"/>'+
+    '<ellipse cx="35" cy="22" rx="10" ry="26" fill="#7F77DD"/>'+
+    '<ellipse cx="65" cy="22" rx="10" ry="26" fill="#7F77DD"/>'+
+    '<ellipse cx="35" cy="22" rx="6" ry="20" fill="#ED93B1" opacity=".7"/>'+
+    '<ellipse cx="65" cy="22" rx="6" ry="20" fill="#ED93B1" opacity=".7"/>'+
+    '<circle cx="50" cy="116" r="27" fill="#7F77DD"/>'+
+    '<path class="seq-al" d="M26 110 Q10 124 13 136" fill="none" stroke="#9A8AE0" stroke-width="12" stroke-linecap="round"/>'+
+    '<circle cx="13" cy="138" r="8" fill="#CECBF6"/>'+
+    '<path d="M74 110 Q90 126 87 116" fill="none" stroke="#AFA9EC" stroke-width="12" stroke-linecap="round"/>'+
+    '<circle cx="88" cy="112" r="8" fill="#CECBF6"/>'+
+    '<g class="seq-brush-el"><g transform="translate(88,112) rotate(-22)">'+
+    '<rect x="-2.5" y="-30" width="5" height="30" rx="2.5" fill="#5B9FDA"/>'+
+    '<rect x="-4.5" y="-43" width="9" height="14" rx="3" fill="#7BC8EE"/>'+
+    '<line x1="-2" y1="-43" x2="-2" y2="-54" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+    '<line x1="0.5" y1="-43" x2="0.5" y2="-55" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+    '<line x1="3" y1="-43" x2="3" y2="-54" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+    '</g></g>'+
+    '<path class="seq-ll" d="M38 140 Q32 154 35 164" fill="none" stroke="#7F77DD" stroke-width="13" stroke-linecap="round"/>'+
+    '<ellipse class="seq-ll" cx="35" cy="164" rx="13" ry="6" fill="#7F77DD" transform="rotate(-5 35 164)"/>'+
+    '<path class="seq-lr" d="M62 140 Q68 154 66 164" fill="none" stroke="#7F77DD" stroke-width="13" stroke-linecap="round"/>'+
+    '<ellipse class="seq-lr" cx="66" cy="164" rx="13" ry="6" fill="#7F77DD" transform="rotate(5 66 164)"/>'+
+    '<circle cx="50" cy="78" r="38" fill="#AFA9EC"/>'+
+    '<ellipse cx="50" cy="82" rx="27" ry="22" fill="#CECBF6"/>'+
+    '<ellipse cx="37" cy="72" rx="8.5" ry="10" fill="white"/>'+
+    '<ellipse cx="63" cy="72" rx="8.5" ry="10" fill="white"/>'+
+    '<circle cx="39" cy="73" r="5" fill="#111"/><circle cx="65" cy="73" r="5" fill="#111"/>'+
+    '<circle cx="41" cy="71" r="1.8" fill="white"/><circle cx="67" cy="71" r="1.8" fill="white"/>'+
+    '<ellipse cx="50" cy="84" rx="4.5" ry="3" fill="#D4537E"/>'+
+    '<ellipse cx="30" cy="85" rx="7" ry="4.5" fill="#F4C0D1" opacity=".6"/>'+
+    '<ellipse cx="70" cy="85" rx="7" ry="4.5" fill="#F4C0D1" opacity=".6"/>'+
+    '<path d="M43 90Q50 97 57 90" stroke="#4A3590" stroke-width="2.5" fill="none" stroke-linecap="round"/>'+
+    '</svg>'
+  );}
+  /* FOX (숲이) */
+  if(id===2){var h3=Math.round(s*1.68);return(
+    '<svg width="'+s+'" height="'+h3+'" viewBox="0 0 100 168">'+
+    '<ellipse cx="50" cy="164" rx="26" ry="4.5" fill="#aaa" opacity=".28"/>'+
+    '<circle cx="50" cy="116" r="27" fill="#5A9010"/>'+
+    '<path class="seq-al" d="M26 110 Q10 124 13 136" fill="none" stroke="#70A820" stroke-width="12" stroke-linecap="round"/>'+
+    '<circle cx="13" cy="138" r="8" fill="#C8EF88"/>'+
+    '<path d="M74 110 Q90 126 87 116" fill="none" stroke="#84CC3C" stroke-width="12" stroke-linecap="round"/>'+
+    '<circle cx="88" cy="112" r="8" fill="#C8EF88"/>'+
+    '<g class="seq-brush-el"><g transform="translate(88,112) rotate(-22)">'+
+    '<rect x="-2.5" y="-30" width="5" height="30" rx="2.5" fill="#5B9FDA"/>'+
+    '<rect x="-4.5" y="-43" width="9" height="14" rx="3" fill="#7BC8EE"/>'+
+    '<line x1="-2" y1="-43" x2="-2" y2="-54" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+    '<line x1="0.5" y1="-43" x2="0.5" y2="-55" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+    '<line x1="3" y1="-43" x2="3" y2="-54" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+    '</g></g>'+
+    '<path class="seq-ll" d="M38 140 Q32 154 35 164" fill="none" stroke="#5A9010" stroke-width="13" stroke-linecap="round"/>'+
+    '<ellipse class="seq-ll" cx="35" cy="164" rx="13" ry="6" fill="#5A9010" transform="rotate(-5 35 164)"/>'+
+    '<path class="seq-lr" d="M62 140 Q68 154 66 164" fill="none" stroke="#5A9010" stroke-width="13" stroke-linecap="round"/>'+
+    '<ellipse class="seq-lr" cx="66" cy="164" rx="13" ry="6" fill="#5A9010" transform="rotate(5 66 164)"/>'+
+    '<polygon points="19,43 29,7 45,41" fill="#5A9010"/>'+
+    '<polygon points="81,43 71,7 55,41" fill="#5A9010"/>'+
+    '<polygon points="24,41 32,13 43,40" fill="#84CC3C"/>'+
+    '<polygon points="76,41 68,13 57,40" fill="#84CC3C"/>'+
+    '<circle cx="50" cy="55" r="40" fill="#84CC3C"/>'+
+    '<ellipse cx="50" cy="65" rx="24" ry="19" fill="#C8EF88"/>'+
+    '<ellipse cx="37" cy="48" rx="9" ry="10.5" fill="white"/>'+
+    '<ellipse cx="63" cy="48" rx="9" ry="10.5" fill="white"/>'+
+    '<circle cx="39" cy="49" r="5.5" fill="#111"/><circle cx="65" cy="49" r="5.5" fill="#111"/>'+
+    '<circle cx="41.5" cy="46.5" r="2" fill="white"/><circle cx="67.5" cy="46.5" r="2" fill="white"/>'+
+    '<ellipse cx="50" cy="62" rx="6" ry="3.5" fill="#3A6010"/>'+
+    '<ellipse cx="29" cy="63" rx="8" ry="5" fill="#D8F0A0" opacity=".7"/>'+
+    '<ellipse cx="71" cy="63" rx="8" ry="5" fill="#D8F0A0" opacity=".7"/>'+
+    '<path d="M43 69Q50 76 57 69" stroke="#3A6010" stroke-width="2.5" fill="none" stroke-linecap="round"/>'+
+    '</svg>'
+  );}
+  /* CHICK (뽀이) */
+  var h4=Math.round(s*1.68);return(
+    '<svg width="'+s+'" height="'+h4+'" viewBox="0 0 100 168">'+
+    '<ellipse cx="50" cy="164" rx="26" ry="4.5" fill="#aaa" opacity=".28"/>'+
+    '<circle cx="50" cy="116" r="27" fill="#2AA090"/>'+
+    '<path class="seq-al" d="M26 110 Q10 124 13 136" fill="none" stroke="#3ECFB2" stroke-width="12" stroke-linecap="round"/>'+
+    '<circle cx="13" cy="138" r="8" fill="#8EEAE0"/>'+
+    '<path d="M74 110 Q90 126 87 116" fill="none" stroke="#3ECFB2" stroke-width="12" stroke-linecap="round"/>'+
+    '<circle cx="88" cy="112" r="8" fill="#8EEAE0"/>'+
+    '<g class="seq-brush-el"><g transform="translate(88,112) rotate(-22)">'+
+    '<rect x="-2.5" y="-30" width="5" height="30" rx="2.5" fill="#5B9FDA"/>'+
+    '<rect x="-4.5" y="-43" width="9" height="14" rx="3" fill="#7BC8EE"/>'+
+    '<line x1="-2" y1="-43" x2="-2" y2="-54" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+    '<line x1="0.5" y1="-43" x2="0.5" y2="-55" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+    '<line x1="3" y1="-43" x2="3" y2="-54" stroke="white" stroke-width="1.5" stroke-linecap="round"/>'+
+    '</g></g>'+
+    '<path class="seq-ll" d="M38 140 Q32 154 35 164" fill="none" stroke="#2AA090" stroke-width="13" stroke-linecap="round"/>'+
+    '<ellipse class="seq-ll" cx="35" cy="164" rx="13" ry="6" fill="#2AA090" transform="rotate(-5 35 164)"/>'+
+    '<path class="seq-lr" d="M62 140 Q68 154 66 164" fill="none" stroke="#2AA090" stroke-width="13" stroke-linecap="round"/>'+
+    '<ellipse class="seq-lr" cx="66" cy="164" rx="13" ry="6" fill="#2AA090" transform="rotate(5 66 164)"/>'+
+    '<circle cx="50" cy="53" r="42" fill="#3ECFB2"/>'+
+    '<ellipse cx="50" cy="50" rx="34" ry="30" fill="#8EEAE0"/>'+
+    '<ellipse cx="37" cy="42" rx="9.5" ry="10.5" fill="white"/>'+
+    '<ellipse cx="63" cy="42" rx="9.5" ry="10.5" fill="white"/>'+
+    '<circle cx="39" cy="43" r="6" fill="#111"/><circle cx="65" cy="43" r="6" fill="#111"/>'+
+    '<circle cx="41.5" cy="41" r="2.2" fill="white"/><circle cx="67.5" cy="41" r="2.2" fill="white"/>'+
+    '<polygon points="43,55 57,55 50,64" fill="#EF9F27"/>'+
+    '<ellipse cx="27" cy="55" rx="9" ry="5.5" fill="#C8F5EE" opacity=".7"/>'+
+    '<ellipse cx="73" cy="55" rx="9" ry="5.5" fill="#C8F5EE" opacity=".7"/>'+
+    '</svg>'
+  );
+}
+
+/* ── regular face-only SVG ── */
+function gS(id,sz){
+  var s=sz||148;
+  if(id===0)return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 100 100"><ellipse cx="50" cy="97" rx="27" ry="4" fill="#bbb" opacity=".3"/><circle cx="24" cy="31" r="14" fill="#C56B10"/><circle cx="76" cy="31" r="14" fill="#C56B10"/><circle cx="24" cy="31" r="8.5" fill="#FFBE74"/><circle cx="76" cy="31" r="8.5" fill="#FFBE74"/><circle cx="50" cy="53" r="40" fill="#F5962A"/><ellipse cx="50" cy="58" rx="29" ry="24" fill="#FFBE74"/><ellipse cx="37" cy="47" rx="9" ry="10.5" fill="white"/><ellipse cx="63" cy="47" rx="9" ry="10.5" fill="white"/><circle cx="39" cy="48" r="5.5" fill="#111"/><circle cx="65" cy="48" r="5.5" fill="#111"/><circle cx="41.5" cy="45.5" r="2" fill="white"/><circle cx="67.5" cy="45.5" r="2" fill="white"/><ellipse cx="50" cy="60" rx="6" ry="4" fill="#995500"/><ellipse cx="30" cy="62" rx="8" ry="5" fill="#FFD5A8" opacity=".7"/><ellipse cx="70" cy="62" rx="8" ry="5" fill="#FFD5A8" opacity=".7"/><path d="M43 68Q50 75 57 68" stroke="#995500" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>';
+  if(id===1){var h2=Math.round(s*1.18);return '<svg width="'+s+'" height="'+h2+'" viewBox="0 0 100 118"><ellipse cx="50" cy="115" rx="27" ry="4" fill="#bbb" opacity=".3"/><ellipse cx="35" cy="24" rx="11" ry="24" fill="#7F77DD"/><ellipse cx="65" cy="24" rx="11" ry="24" fill="#7F77DD"/><ellipse cx="35" cy="24" rx="6.5" ry="18" fill="#ED93B1" opacity=".75"/><ellipse cx="65" cy="24" rx="6.5" ry="18" fill="#ED93B1" opacity=".75"/><circle cx="50" cy="61" r="40" fill="#9279DF"/><ellipse cx="50" cy="65" rx="28" ry="24" fill="#C4B8F0"/><ellipse cx="37" cy="54" rx="9" ry="10.5" fill="white"/><ellipse cx="63" cy="54" rx="9" ry="10.5" fill="white"/><circle cx="39" cy="55" r="5.5" fill="#111"/><circle cx="65" cy="55" r="5.5" fill="#111"/><circle cx="41.5" cy="52.5" r="2" fill="white"/><circle cx="67.5" cy="52.5" r="2" fill="white"/><ellipse cx="50" cy="68" rx="5" ry="3.5" fill="#D4537E"/><ellipse cx="30" cy="69" rx="8" ry="5" fill="#F4C0D1" opacity=".6"/><ellipse cx="70" cy="69" rx="8" ry="5" fill="#F4C0D1" opacity=".6"/><path d="M43 74Q50 81 57 74" stroke="#4A3590" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>';}
+  if(id===2)return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 100 100"><ellipse cx="50" cy="97" rx="27" ry="4" fill="#bbb" opacity=".3"/><polygon points="19,43 29,7 45,41" fill="#5A9010"/><polygon points="81,43 71,7 55,41" fill="#5A9010"/><polygon points="24,41 32,13 43,40" fill="#84CC3C"/><polygon points="76,41 68,13 57,40" fill="#84CC3C"/><circle cx="50" cy="55" r="40" fill="#84CC3C"/><ellipse cx="50" cy="65" rx="24" ry="19" fill="#C8EF88"/><ellipse cx="37" cy="48" rx="9" ry="10.5" fill="white"/><ellipse cx="63" cy="48" rx="9" ry="10.5" fill="white"/><circle cx="39" cy="49" r="5.5" fill="#111"/><circle cx="65" cy="49" r="5.5" fill="#111"/><circle cx="41.5" cy="46.5" r="2" fill="white"/><circle cx="67.5" cy="46.5" r="2" fill="white"/><ellipse cx="50" cy="62" rx="6" ry="3.5" fill="#3A6010"/><ellipse cx="29" cy="63" rx="8" ry="5" fill="#D8F0A0" opacity=".7"/><ellipse cx="71" cy="63" rx="8" ry="5" fill="#D8F0A0" opacity=".7"/><path d="M43 69Q50 76 57 69" stroke="#3A6010" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>';
+  return '<svg width="'+s+'" height="'+s+'" viewBox="0 0 100 100"><ellipse cx="50" cy="97" rx="27" ry="4" fill="#bbb" opacity=".3"/><ellipse cx="14" cy="78" rx="13" ry="17" fill="#2AA090"/><ellipse cx="86" cy="78" rx="13" ry="17" fill="#2AA090"/><circle cx="50" cy="55" r="42" fill="#3ECFB2"/><ellipse cx="50" cy="52" rx="34" ry="30" fill="#8EEAE0"/><ellipse cx="37" cy="44" rx="9.5" ry="10.5" fill="white"/><ellipse cx="63" cy="44" rx="9.5" ry="10.5" fill="white"/><circle cx="39" cy="45" r="6" fill="#111"/><circle cx="65" cy="45" r="6" fill="#111"/><circle cx="41.5" cy="42.5" r="2.2" fill="white"/><circle cx="67.5" cy="42.5" r="2.2" fill="white"/><polygon points="43,57 57,57 50,66" fill="#EF9F27"/><ellipse cx="27" cy="57" rx="9" ry="5.5" fill="#C8F5EE" opacity=".7"/><ellipse cx="73" cy="57" rx="9" ry="5.5" fill="#C8F5EE" opacity=".7"/></svg>';
+}
+
+/* ── Brushing action SVG — brush ABOVE teeth, bristles sweep down INTO teeth ── */
+function gSBrush(id,sz){
+  var s=sz||118;
+  /*  Layout (top→bottom):
+      [arm + brush head]  ← moves L-R (brushAct animation)
+      ||||||||||||||||    ← bristles (white)  
+      [  U P P E R  T E E T H  ]  ← clearly visible white row
+      [ dark mouth interior ]
+      [lower teeth]
+  */
+  function bl(ac,hc,ty,hx){
+    /* ty = top of teeth; brush head sits ABOVE at ty-12 */
+    var bT=ty-12, bL=37, bW=19;
+    return (
+      '<g style="animation:brushAct .46s ease-in-out infinite">'+
+        /* ARM */
+        '<path d="M96 '+(ty-6)+' Q90 '+(ty-7)+' '+hx+' '+(ty-7)+'" fill="none" stroke="'+ac+'" stroke-width="11" stroke-linecap="round"/>'+
+        /* HAND */
+        '<circle cx="'+hx+'" cy="'+(ty-7)+'" r="7" fill="'+hc+'"/>'+
+        /* HANDLE */
+        '<rect x="'+(bL+bW)+'" y="'+(ty-10)+'" width="'+(hx-bL-bW-3)+'" height="8" rx="4" fill="#5B9FDA"/>'+
+        /* BRUSH HEAD (clearly above teeth) */
+        '<rect x="'+bL+'" y="'+bT+'" width="'+bW+'" height="13" rx="3" fill="#7BC8EE"/>'+
+        /* BRISTLES: from brush bottom down into teeth top */
+        '<line x1="'+(bL+2.5)+'" y1="'+(bT+13)+'" x2="'+(bL+2.5)+'" y2="'+(ty+8)+'" stroke="white" stroke-width="2" stroke-linecap="round"/>'+
+        '<line x1="'+(bL+6.5)+'" y1="'+(bT+13)+'" x2="'+(bL+6.5)+'" y2="'+(ty+9)+'" stroke="white" stroke-width="2" stroke-linecap="round"/>'+
+        '<line x1="'+(bL+10.5)+'" y1="'+(bT+13)+'" x2="'+(bL+10.5)+'" y2="'+(ty+8)+'" stroke="white" stroke-width="2" stroke-linecap="round"/>'+
+        '<line x1="'+(bL+14.5)+'" y1="'+(bT+13)+'" x2="'+(bL+14.5)+'" y2="'+(ty+9)+'" stroke="white" stroke-width="2" stroke-linecap="round"/>'+
+        /* TOOTHPASTE blob (sits on bristles at teeth surface) */
+        '<ellipse cx="'+(bL+9)+'" cy="'+(ty+5)+'" rx="7.5" ry="3.5" fill="#C8EEFF" opacity=".88"/>'+
+      '</g>'+
+      /* FOAM BUBBLES */
+      '<circle style="animation:foamRise .85s ease-in-out infinite" cx="45" cy="'+(ty+16)+'" r="4" fill="white" opacity=".75"/>'+
+      '<circle style="animation:foamRise .85s ease-in-out infinite .28s" cx="54" cy="'+(ty+19)+'" r="2.8" fill="white" opacity=".6"/>'+
+      '<circle style="animation:foamRise .85s ease-in-out infinite .55s" cx="38" cy="'+(ty+15)+'" r="2.2" fill="white" opacity=".55"/>'+
+      '<circle style="animation:foamRise .85s ease-in-out infinite .1s" cx="61" cy="'+(ty+17)+'" r="3.2" fill="white" opacity=".65"/>'
+    );
+  }
+
+  /* ── BEAR (토리) 100×100 ── */
+  if(id===0){var ty=65;return(
+    '<svg width="'+s+'" height="'+s+'" viewBox="0 0 100 100">'+
+    '<ellipse cx="50" cy="97" rx="27" ry="4" fill="#bbb" opacity=".28"/>'+
+    '<circle cx="24" cy="31" r="14" fill="#C56B10"/><circle cx="76" cy="31" r="14" fill="#C56B10"/>'+
+    '<circle cx="24" cy="31" r="8.5" fill="#FFBE74"/><circle cx="76" cy="31" r="8.5" fill="#FFBE74"/>'+
+    '<circle cx="50" cy="53" r="40" fill="#F5962A"/>'+
+    '<ellipse cx="50" cy="58" rx="29" ry="24" fill="#FFBE74"/>'+
+    '<ellipse cx="37" cy="47" rx="9" ry="10.5" fill="white"/>'+
+    '<ellipse cx="63" cy="47" rx="9" ry="10.5" fill="white"/>'+
+    '<circle cx="39" cy="48" r="5.5" fill="#111"/><circle cx="65" cy="48" r="5.5" fill="#111"/>'+
+    '<circle cx="41.5" cy="45.5" r="2" fill="white"/><circle cx="67.5" cy="45.5" r="2" fill="white"/>'+
+    '<ellipse cx="50" cy="60" rx="6" ry="4" fill="#995500"/>'+
+    '<ellipse cx="30" cy="62" rx="8" ry="5" fill="#FFD5A8" opacity=".7"/>'+
+    '<ellipse cx="70" cy="62" rx="8" ry="5" fill="#FFD5A8" opacity=".7"/>'+
+    /* BIG OPEN MOUTH (below teeth) */
+    '<path d="M35 68 Q50 90 65 68" fill="#6B2800"/>'+
+    /* UPPER TEETH: wide, prominent, with individual tooth gaps */
+    '<rect x="37" y="'+ty+'" width="26" height="11" rx="2.5" fill="white"/>'+
+    '<line x1="43.5" y1="'+ty+'" x2="43.5" y2="'+(ty+11)+'" stroke="#D8D0C8" stroke-width="1.8"/>'+
+    '<line x1="50" y1="'+ty+'" x2="50" y2="'+(ty+11)+'" stroke="#D8D0C8" stroke-width="1.8"/>'+
+    '<line x1="56.5" y1="'+ty+'" x2="56.5" y2="'+(ty+11)+'" stroke="#D8D0C8" stroke-width="1.8"/>'+
+    /* LOWER TEETH */
+    '<rect x="39" y="80" width="22" height="5" rx="1.5" fill="#F0EDE8"/>'+
+    bl('#F5962A','#FFBE74',ty,82)+
+    '</svg>'
+  );}
+
+  /* ── BUNNY (달이) 100×118 ── */
+  if(id===1){var h2=Math.round(s*1.18);var ty=72;return(
+    '<svg width="'+s+'" height="'+h2+'" viewBox="0 0 100 118">'+
+    '<ellipse cx="50" cy="115" rx="27" ry="4" fill="#bbb" opacity=".28"/>'+
+    '<ellipse cx="35" cy="24" rx="11" ry="24" fill="#7F77DD"/>'+
+    '<ellipse cx="65" cy="24" rx="11" ry="24" fill="#7F77DD"/>'+
+    '<ellipse cx="35" cy="24" rx="6.5" ry="18" fill="#ED93B1" opacity=".75"/>'+
+    '<ellipse cx="65" cy="24" rx="6.5" ry="18" fill="#ED93B1" opacity=".75"/>'+
+    '<circle cx="50" cy="61" r="40" fill="#9279DF"/>'+
+    '<ellipse cx="50" cy="65" rx="28" ry="24" fill="#C4B8F0"/>'+
+    '<ellipse cx="37" cy="54" rx="9" ry="10.5" fill="white"/>'+
+    '<ellipse cx="63" cy="54" rx="9" ry="10.5" fill="white"/>'+
+    '<circle cx="39" cy="55" r="5.5" fill="#111"/><circle cx="65" cy="55" r="5.5" fill="#111"/>'+
+    '<circle cx="41.5" cy="52.5" r="2" fill="white"/><circle cx="67.5" cy="52.5" r="2" fill="white"/>'+
+    '<ellipse cx="50" cy="68" rx="5" ry="3.5" fill="#D4537E"/>'+
+    '<ellipse cx="30" cy="69" rx="8" ry="5" fill="#F4C0D1" opacity=".6"/>'+
+    '<ellipse cx="70" cy="69" rx="8" ry="5" fill="#F4C0D1" opacity=".6"/>'+
+    '<path d="M35 75 Q50 96 65 75" fill="#5B2060"/>'+
+    '<rect x="37" y="'+ty+'" width="26" height="11" rx="2.5" fill="white"/>'+
+    '<line x1="43.5" y1="'+ty+'" x2="43.5" y2="'+(ty+11)+'" stroke="#D8D0C8" stroke-width="1.8"/>'+
+    '<line x1="50" y1="'+ty+'" x2="50" y2="'+(ty+11)+'" stroke="#D8D0C8" stroke-width="1.8"/>'+
+    '<line x1="56.5" y1="'+ty+'" x2="56.5" y2="'+(ty+11)+'" stroke="#D8D0C8" stroke-width="1.8"/>'+
+    '<rect x="39" y="88" width="22" height="5" rx="1.5" fill="#E8E0F8"/>'+
+    bl('#AFA9EC','#CECBF6',ty,82)+
+    '</svg>'
+  );}
+
+  /* ── FOX (숲이) 100×100 ── */
+  if(id===2){var ty=65;return(
+    '<svg width="'+s+'" height="'+s+'" viewBox="0 0 100 100">'+
+    '<ellipse cx="50" cy="97" rx="27" ry="4" fill="#bbb" opacity=".28"/>'+
+    '<polygon points="19,43 29,7 45,41" fill="#5A9010"/><polygon points="81,43 71,7 55,41" fill="#5A9010"/>'+
+    '<polygon points="24,41 32,13 43,40" fill="#84CC3C"/><polygon points="76,41 68,13 57,40" fill="#84CC3C"/>'+
+    '<circle cx="50" cy="55" r="40" fill="#84CC3C"/>'+
+    '<ellipse cx="50" cy="65" rx="24" ry="19" fill="#C8EF88"/>'+
+    '<ellipse cx="37" cy="48" rx="9" ry="10.5" fill="white"/>'+
+    '<ellipse cx="63" cy="48" rx="9" ry="10.5" fill="white"/>'+
+    '<circle cx="39" cy="49" r="5.5" fill="#111"/><circle cx="65" cy="49" r="5.5" fill="#111"/>'+
+    '<circle cx="41.5" cy="46.5" r="2" fill="white"/><circle cx="67.5" cy="46.5" r="2" fill="white"/>'+
+    '<ellipse cx="50" cy="62" rx="6" ry="3.5" fill="#3A6010"/>'+
+    '<ellipse cx="29" cy="63" rx="8" ry="5" fill="#D8F0A0" opacity=".7"/>'+
+    '<ellipse cx="71" cy="63" rx="8" ry="5" fill="#D8F0A0" opacity=".7"/>'+
+    '<path d="M35 68 Q50 88 65 68" fill="#2A4A00"/>'+
+    '<rect x="37" y="'+ty+'" width="26" height="11" rx="2.5" fill="white"/>'+
+    '<line x1="43.5" y1="'+ty+'" x2="43.5" y2="'+(ty+11)+'" stroke="#D8D0C8" stroke-width="1.8"/>'+
+    '<line x1="50" y1="'+ty+'" x2="50" y2="'+(ty+11)+'" stroke="#D8D0C8" stroke-width="1.8"/>'+
+    '<line x1="56.5" y1="'+ty+'" x2="56.5" y2="'+(ty+11)+'" stroke="#D8D0C8" stroke-width="1.8"/>'+
+    '<rect x="39" y="80" width="22" height="5" rx="1.5" fill="#D8F0A0"/>'+
+    bl('#84CC3C','#C8EF88',ty,82)+
+    '</svg>'
+  );}
+
+  /* ── CHICK (뽀이) 100×100 — open beak ── */
+  var ty=58;return(
+    '<svg width="'+s+'" height="'+s+'" viewBox="0 0 100 100">'+
+    '<ellipse cx="50" cy="97" rx="27" ry="4" fill="#bbb" opacity=".28"/>'+
+    '<ellipse cx="14" cy="78" rx="13" ry="17" fill="#2AA090"/>'+
+    '<ellipse cx="86" cy="78" rx="13" ry="17" fill="#2AA090"/>'+
+    '<circle cx="50" cy="55" r="42" fill="#3ECFB2"/>'+
+    '<ellipse cx="50" cy="52" rx="34" ry="30" fill="#8EEAE0"/>'+
+    '<ellipse cx="37" cy="44" rx="9.5" ry="10.5" fill="white"/>'+
+    '<ellipse cx="63" cy="44" rx="9.5" ry="10.5" fill="white"/>'+
+    '<circle cx="39" cy="45" r="6" fill="#111"/><circle cx="65" cy="45" r="6" fill="#111"/>'+
+    '<circle cx="41.5" cy="42.5" r="2.2" fill="white"/><circle cx="67.5" cy="42.5" r="2.2" fill="white"/>'+
+    '<ellipse cx="27" cy="55" rx="9" ry="5.5" fill="#C8F5EE" opacity=".7"/>'+
+    '<ellipse cx="73" cy="55" rx="9" ry="5.5" fill="#C8F5EE" opacity=".7"/>'+
+    /* Open beak: upper (wide) + lower gap + lower jaw */
+    '<polygon points="35,'+ty+' 65,'+ty+' 50,51" fill="#EF9F27"/>'+
+    '<rect x="36" y="'+(ty-1)+'" width="28" height="8" rx="2" fill="#F5B030"/>'+
+    '<polygon points="36,'+(ty+14)+' 64,'+(ty+14)+' 50,'+(ty+8)+'" fill="#D88020"/>'+
+    bl('#3ECFB2','#8EEAE0',ty,82)+
+    '</svg>'
+  );
+}
+function apT(){
+  var c=CH[S.c];
+  document.getElementById('W').style.background=c.bg;
+  document.getElementById('bgd').innerHTML='<div class="dc" style="width:230px;height:230px;background:'+c.acc+';opacity:.1;top:-80px;left:-60px"></div><div class="dc" style="width:140px;height:140px;background:'+c.acc+';opacity:.09;bottom:90px;left:15px"></div><div class="dc" style="width:85px;height:85px;background:'+c.acc+';opacity:.12;top:35px;left:230px"></div><div class="dc" style="width:55px;height:55px;background:'+c.acc+';opacity:.1;top:105px;left:158px"></div>';
+  document.getElementById('csv').innerHTML=gS(S.c,148);
+  document.getElementById('cbnm').textContent=c.nm;
+  document.querySelectorAll('.abtn,.cok,.big-next').forEach(function(b){b.style.background=c.acc;});
+}
+function sA(cls){document.getElementById('can').className=cls;}
+function sB(t){document.getElementById('bub').textContent=t;}
+
+function oP(type){
+  if(S.pan===type){cP();return;}
+  if(type==='p'){S.ps=0;S.pdi=false;}
+  S.pan=type;
+  document.getElementById('pnl').classList.add('op');
+  document.getElementById('cmp').classList.add('sh');
+  document.getElementById('bub').classList.add('sh');
+  [['bp','p','#0E68AB'],['bh','h','#0A7840'],['bc','c','#A05A00']].forEach(function(x){document.getElementById(x[0]).style.borderColor=x[1]===type?x[2]:'transparent';});
+  rP();
+}
+function cP(){
+  S.pan=null;
+  document.getElementById('pnl').classList.remove('op');
+  document.getElementById('cmp').classList.remove('sh');
+  document.getElementById('bub').classList.remove('sh');
+  ['bp','bh','bc'].forEach(function(id){document.getElementById(id).style.borderColor='transparent';});
+  sA('an-b');sB('안녕 '+nm()+'! 오늘은 뭘 해볼까요? 😊');
+}
+function rP(){
+  var ts={p:'🌟 나에 대해 알려줘',h:'🚀 같이 해봐요!',c:'📅 내 도장판'};
+  document.getElementById('pt').textContent=ts[S.pan];
+  if(S.pan==='p')rProf();else if(S.pan==='h')rHS();else rCal();
+  setTimeout(function(){emP(document.getElementById('W'));},30);
+}
+function rProf(){
+  var step=PSTEPS[S.ps];var c=CH[S.c];
+  if(step.q)sB(step.q);
+  var dotsH='<div class="sdots">';
+  for(var j=0;j<5;j++){var act=j===S.ps&&S.ps<5,dn=j<S.ps&&S.ps<5;dotsH+='<div style="height:10px;border-radius:5px;transition:all .25s;background:'+(act||dn?c.acc:'#E0E0E0')+';width:'+(act?'24px':'10px')+'"></div>';}
+  dotsH+='</div>';
+  var html=dotsH;
+  if(step.type==='text'){
+    sA('an-b');
+    html+='<input class="big-inp" id="ps-inp" type="text" placeholder="'+step.ph+'" value="'+(S.pf[step.key]||'')+'" oninput="S.pf[\''+step.key+'\']=this.value" onkeydown="if(event.key===\'Enter\')nextPS()">';
+    html+='<button class="big-next" style="background:'+c.acc+'" onclick="nextPS()">확인! →</button>';
+  } else if(step.type==='grid'){
+    sA('an-b');var canDI=step.key!=='hd';
+    if(canDI&&S.pdi){
+      html+='<input class="big-inp" id="di-inp" type="text" placeholder="직접 써줘!" onkeydown="if(event.key===\'Enter\')confDI(\''+step.key+'\')">';
+      html+='<button class="big-next" style="background:'+c.acc+'" onclick="confDI(\''+step.key+'\')">확인! →</button>';
+      html+='<button class="altb" onclick="S.pdi=false;rP()">← 선택지로 돌아가기</button>';
+    } else {
+      html+='<div class="chgrid">'+step.opts.map(function(o){var sel=S.pf[step.key]===o.lb;return '<button class="chbtn" onclick="choiceP(\''+step.key+'\',\''+o.lb+'\')" style="'+(sel?'background:'+c.bg+';border-color:'+c.acc+';color:'+c.dk:'')+'"><div class="cem">'+o.em+'</div><div>'+o.lb+'</div></button>';}).join('')+'</div>';
+      if(canDI)html+='<button class="di-btn" onclick="S.pdi=true;rP()">✏️ 직접 입력하기</button>';
+    }
+  } else if(step.type==='colors'){
+    sA('an-b');
+    if(S.pdi){
+      html+='<input class="big-inp" id="di-inp" type="text" placeholder="좋아하는 색 이름을 써줘!" onkeydown="if(event.key===\'Enter\')confDI(\'col\')">';
+      html+='<button class="big-next" style="background:'+c.acc+'" onclick="confDI(\'col\')">확인! →</button>';
+      html+='<button class="altb" onclick="S.pdi=false;rP()">← 색깔 선택으로 돌아가기</button>';
+    } else {
+      html+='<div class="colgrid">'+PAL.map(function(p2){var sel=S.pf.col===p2.h;return '<div class="colsw'+(sel?' sl':'')+'" style="background:'+p2.h+'" onclick="choiceP(\'col\',\''+p2.h+'\')"><div class="col-lbl">'+p2.nm+'</div></div>';}).join('')+'</div>';
+      html+='<button class="di-btn" onclick="S.pdi=true;rP()">✏️ 직접 입력하기</button>';
+    }
+  } else {
+    sA('an-e');sB(nm()+ya()+', 동요가 완성됐어! 🎉');
+    html+='<div style="text-align:center;padding:14px 0 8px"><div style="font-size:56px;margin-bottom:12px">🎉</div><div style="font-size:20px;font-weight:800;margin-bottom:7px">'+nm()+ya()+', 완성됐어!</div><div style="font-size:14px;font-weight:600;color:#888;margin-bottom:18px">나만의 동요가 준비됐어요!</div><div style="background:'+CH[S.c].bg+';border-radius:18px;padding:15px;font-size:14px;font-weight:700;color:'+CH[S.c].dk+';line-height:1.9">🎵 "'+nm()+ya()+', '+(S.pf.hd||'습관')+' 같이 해봐요~"<br><span style="color:'+CH[S.c].acc+'">'+(S.pf.fd||'음식')+' 좋아하는 '+nm()+'만의 동요!</span></div></div>';
+  }
+  if(S.ps>0&&S.ps<PSTEPS.length-1&&!S.pdi)html+='<button class="altb" onclick="prevPS()">← 뒤로</button>';
+  document.getElementById('pb').innerHTML=html;
+  var inp=document.getElementById('ps-inp')||document.getElementById('di-inp');
+  if(inp)setTimeout(function(){inp.focus();},80);
+}
+function nextPS(){S.pdi=false;var step=PSTEPS[S.ps];if(step.type==='text'){var inp=document.getElementById('ps-inp');if(inp)S.pf[step.key]=inp.value.trim();}if(S.ps<PSTEPS.length-1){S.ps++;rP();}}
+function prevPS(){S.pdi=false;if(S.ps>0){S.ps--;rP();}}
+function choiceP(key,val){S.pdi=false;S.pf[key]=val;if(S.ps<PSTEPS.length-1){S.ps++;rP();}}
+function confDI(key){var inp=document.getElementById('di-inp');if(inp&&inp.value.trim()){S.pf[key]=inp.value.trim();S.pdi=false;if(S.ps<PSTEPS.length-1){S.ps++;rP();}}}
+function rHS(){
+  sA('an-b');sB('오늘 어떤 습관을 해볼까요? 💪');
+  document.getElementById('pb').innerHTML='<div style="font-size:15px;font-weight:700;color:#666;margin-bottom:13px">같이 해볼 습관을 골라봐요!</div><div class="hg">'+HB.map(function(h){return '<button class="hc" style="background:'+h.bg+'" onclick="selH(\''+h.id+'\')"><div class="hem">'+h.em+'</div><div class="hnm">'+h.nm+'</div><div class="htm">약 '+Math.floor(h.rt/60)+'분</div></button>';}).join('')+'</div>';
+}
+function selH(id){
+  S.hab=HB.find(function(h){return h.id===id;});
+  S.pan=null;
+  document.getElementById('pnl').classList.remove('op');
+  document.getElementById('cmp').classList.remove('sh');
+  document.getElementById('bub').classList.remove('sh');
+  ['bp','bh','bc'].forEach(function(bid){document.getElementById(bid).style.borderColor='transparent';});
+  if(id==='br'){startBrushSeq();}
+  else{S.hov='ready';var hov=document.getElementById('hov');hov.style.background=CH[S.c].bg;rHov();hov.classList.remove('hid');setTimeout(function(){emP(document.getElementById('hov'));},40);}
+}
+
+/* ══ BRUSH SEQUENCE ══ */
+var seqTs=[];
+function sT(fn,ms){seqTs.push(setTimeout(fn,ms));}
+function sClear(){seqTs.forEach(function(t){clearTimeout(t);});seqTs=[];}
+
+function startBrushSeq(){
+  sClear();
+  var c=CH[S.c];
+  var seqOv=document.getElementById('seq-ov');
+  seqOv.style.background='transparent'; /* scenes have own background */
+  /* reset UI */
+  ['seq-bub','seq-wave','seq-n1','seq-n2','seq-cta','seq-cue-box'].forEach(function(id){document.getElementById(id).classList.remove('show');});
+  document.getElementById('seq-trail').innerHTML='';
+  document.getElementById('seq-cta-btn').style.background=c.acc;
+  updateSeqDots(1);
+  /* inject character */
+  var charEl=document.getElementById('seq-char-svg');
+  charEl.innerHTML=gSFull(S.c,90);
+  /* hide brush initially */
+  charEl.querySelectorAll('.seq-brush-el').forEach(function(el){el.style.opacity='0';});
+  /* remove walk anim classes */
+  charEl.querySelectorAll('.seq-ll,.seq-lr,.seq-al').forEach(function(el){el.classList.remove('walk-ll','walk-lr','walk-al');});
+  /* reset position */
+  var cw=document.getElementById('seq-cw');
+  cw.style.transition='none';cw.style.left='-120px';cw.style.opacity='0';
+  document.getElementById('seq-cwi').classList.remove('seq-walking','seq-beckoning');
+  /* show overlay */
+  seqOv.classList.remove('hid');
+  sB(nm()+ya()+', 양치하러 가볼까? 🪥');
+
+  /* Phase 1: slide in */
+  sT(function(){
+    cw.style.transition='left .75s cubic-bezier(.34,1.56,.64,1), opacity .5s';
+    cw.style.left='80px';cw.style.opacity='1';
+    updateSeqDots(1);
+  },200);
+
+  /* Phase 2: walk toward door */
+  sT(function(){
+    updateSeqDots(2);
+    var cwi=document.getElementById('seq-cwi');
+    cwi.classList.add('seq-walking');
+    /* start leg/arm swing */
+    var charEl2=document.getElementById('seq-char-svg');
+    charEl2.querySelectorAll('.seq-ll').forEach(function(el){el.classList.add('walk-ll');});
+    charEl2.querySelectorAll('.seq-lr').forEach(function(el){el.classList.add('walk-lr');});
+    charEl2.querySelectorAll('.seq-al').forEach(function(el){el.classList.add('walk-al');});
+    /* show toothbrush in hand */
+    sT(function(){charEl2.querySelectorAll('.seq-brush-el').forEach(function(el){el.style.opacity='1';el.style.transition='opacity .4s';});},300);
+    /* walk all the way into bathroom — destination 500px puts character clearly past the door */
+    cw.style.transition='left 3.2s cubic-bezier(.25,.1,.25,1), opacity .3s';
+    cw.style.left='500px';
+    /* footprints extend through the door and into bathroom */
+    [125,172,219,266,313,360,407,455].forEach(function(x,i){sT(function(){addFP(x);},i*360);});
+  },1100);
+
+  /* Phase 3: reach bathroom — fires after walk completes (1100 + 3200 + 200ms buffer) */
+  sT(function(){
+    updateSeqDots(3);
+    var cwi=document.getElementById('seq-cwi');
+    cwi.classList.remove('seq-walking');
+    var charEl3=document.getElementById('seq-char-svg');
+    charEl3.querySelectorAll('.seq-ll,.seq-lr,.seq-al').forEach(function(el){el.classList.remove('walk-ll','walk-lr','walk-al');});
+    document.getElementById('seq-cue-box').classList.add('show');
+  },4600);
+
+  /* Phase 4: cue song speech bubble */
+  sT(function(){
+    updateSeqDots(4);
+    var bub=document.getElementById('seq-bub');
+    bub.textContent='"'+nm()+ya()+', 같이 양치할 시간이야! 🎵"';
+    bub.classList.add('show');
+    document.getElementById('seq-n1').classList.add('show');
+    document.getElementById('seq-n2').classList.add('show');
+    sB('"'+nm()+ya()+', 양치하러 왔어! 같이 해보자!" 🎵');
+  },5500);
+
+  /* Phase 5: beckon */
+  sT(function(){
+    updateSeqDots(5);
+    document.getElementById('seq-cwi').classList.add('seq-beckoning');
+    document.getElementById('seq-wave').classList.add('show');
+    sT(function(){
+      document.getElementById('seq-cta').classList.add('show');
+      setTimeout(function(){emP(document.getElementById('seq-ov'));},50);
+    },800);
+  },6500);
+}
+
+function updateSeqDots(phase){
+  var labels=['등장','이동','도착','노래','손짓'];
+  var c=CH[S.c];
+  document.getElementById('seq-pdots').innerHTML=labels.map(function(lb,i){
+    var act=(i+1)===phase,dn=(i+1)<phase;
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px">'+
+      '<div style="height:8px;border-radius:4px;background:'+(act?c.acc:dn?c.acc+'88':'rgba(0,0,0,.15)')+';width:'+(act?'22px':'8px')+';transition:all .3s"></div>'+
+      (act?'<div style="font-size:9px;font-weight:700;color:'+c.acc+'">'+lb+'</div>':'')+
+    '</div>';
+  }).join('');
+}
+function addFP(lx){
+  var t=document.getElementById('seq-trail');
+  var fp=document.createElement('div');
+  fp.className='seq-fp';fp.style.left=lx+'px';fp.style.bottom='102px';
+  fp.textContent='👣';t.appendChild(fp);
+  setTimeout(function(){fp.style.opacity='0.42';emP(fp);},30);
+}
+function seqGoHabit(){
+  sClear();
+  document.getElementById('seq-ov').classList.add('hid');
+  S.hov='ready';
+  var hov=document.getElementById('hov');hov.style.background=CH[S.c].bg;
+  rHov();hov.classList.remove('hid');
+  setTimeout(function(){emP(document.getElementById('hov'));},40);
+}
+function exitSeq(){
+  sClear();document.getElementById('seq-ov').classList.add('hid');
+  sA('an-b');sB('안녕 '+nm()+'! 오늘은 뭘 해볼까요? 😊');
+}
+
+/* ══ HABIT OVERLAY ══ */
+function rHov(){
+  var c=CH[S.c];
+  document.getElementById('hov-dots').innerHTML=['ready','doing','done'].map(function(p){
+    var act=p===S.hov;
+    return '<div style="height:10px;border-radius:5px;transition:all .25s;background:'+(act?'rgba(0,0,0,.4)':'rgba(0,0,0,.15)')+';width:'+(act?'26px':'10px')+'"></div>';
+  }).join('');
+  if(S.hov==='ready')rHovR(c);else if(S.hov==='doing')rHovD(c);else rHovDn(c);
+  setTimeout(function(){emP(document.getElementById('hov'));},30);
+}
+function rHovR(c){
+  var h=S.hab;sB(nm()+ya()+', 같이 해볼까? 🎵');
+  var eb=document.getElementById('hov-exit');eb.innerHTML='✕ 나가기';eb.onclick=exitHov;eb.style.display='';
+  document.getElementById('hov-body').innerHTML=
+    '<div style="font-size:56px;line-height:1">'+h.em+'</div>'+
+    '<div style="font-size:22px;font-weight:800">'+h.nm+' 시간!</div>'+
+    '<div style="font-size:13px;font-weight:600;color:#666">약 '+Math.floor(h.rt/60)+'분 동안 같이 해봐요!</div>'+
+    '<div class="song-card"><div class="song-card-lbl"><span class="playing-dot" style="background:'+c.acc+'"></span>시작 동요 재생 중<span class="note-float">🎵</span><span class="note-float">🎶</span></div>'+
+    '<div class="song-card-ttl">'+pr(h.pre)+'</div><div style="font-size:11px;color:#888;font-weight:600;margin-top:5px">↓ 시작 버튼을 누르면 이행 동요로 바뀌어요</div></div>'+
+    '<div class="an-e">'+gS(S.c,132)+'</div>';
+  document.getElementById('hov-bot').innerHTML='<button class="hov-big-btn" style="background:'+c.acc+'" onclick="startHov()">▶ 지금 시작해볼까요!</button>';
+}
+function rHovD(c){
+  var h=S.hab;sB(nm()+ya()+', 잘하고 있어요! 💪');
+  var eb=document.getElementById('hov-exit');eb.innerHTML='⏸ 잠깐 쉬어요';eb.onclick=pauseHov;eb.style.display='';
+  var ci=251.3;var m=Math.floor(S.ti/60);var sc=(S.ti%60).toString().padStart(2,'0');
+  document.getElementById('hov-body').innerHTML=
+    '<div class="song-card" style="padding:10px 18px"><div class="song-card-lbl"><span class="playing-dot" style="background:'+c.acc+'"></span>이행 동요 재생 중<span class="note-float">🎧</span><span class="note-float">🎵</span></div>'+
+    '<div class="song-card-ttl" style="font-size:15px">'+pr(h.ply)+'</div></div>'+
+    '<div style="display:flex;align-items:center;justify-content:center;gap:28px">'+
+      /* 양치하기는 brushing SVG, 나머지는 일반 sway */
+      '<div class="'+(h.id==='br'?'an-b':'an-s')+'">'+((h.id==='br')?gSBrush(S.c,115):gS(S.c,105))+'</div>'+
+      '<div class="hov-timer-wrap"><svg viewBox="0 0 100 100" style="transform:rotate(-90deg)">'+
+        '<circle cx="50" cy="50" r="40" fill="none" stroke="rgba(0,0,0,.1)" stroke-width="8"/>'+
+        '<circle cx="50" cy="50" r="40" fill="none" stroke="'+c.acc+'" stroke-width="8" stroke-dasharray="'+ci+'" stroke-dashoffset="'+ci+'" stroke-linecap="round" id="hov-arc"/>'+
+      '</svg><div class="hov-timer-txt"><div class="hov-tnum" id="hov-tnum">'+m+':'+sc+'</div><div class="hov-tlbl">남은 시간</div></div></div>'+
+    '</div>'+
+    '<div class="hov-lyr">'+h.lyr.replace(/\n/g,'<br>')+'</div>';
+  document.getElementById('hov-bot').innerHTML='<div class="hov-demo">데모 모드 · '+h.dt+'초 (실제 약 '+Math.floor(h.rt/60)+'분)</div>';
+}
+function rHovDn(c){
+  var h=S.hab;sB(nm()+ya()+', 정말 잘했어요! 🌟');
+  document.getElementById('hov-exit').style.display='none';
+  document.getElementById('hov-body').innerHTML=
+    '<div style="font-size:54px;line-height:1">⭐⭐</div>'+
+    '<div style="font-size:24px;font-weight:800">'+nm()+ya()+', 잘했어요!</div>'+
+    '<div style="font-size:16px;font-weight:700;color:'+c.acc+'">'+h.nm+' 완료! 🎉</div>'+
+    '<div style="font-size:14px;font-weight:600;color:#666">별 2개 획득! 지금까지 총 '+S.st+'개 🌟</div>'+
+    '<div id="done-char" class="an-c">'+gS(S.c,138)+'</div>';
+  setTimeout(function(){var el=document.getElementById('done-char');if(el)el.className='an-b';},3200);
+  document.getElementById('hov-bot').innerHTML=
+    '<button class="hov-big-btn" style="background:'+c.acc+'" onclick="oP(\'c\');exitHov()">📅 도장판 보러 가기!</button>'+
+    '<button class="hov-alt-btn" onclick="exitHov()">다른 습관도 해볼까요?</button>';
+}
+function startHov(){
+  S.ti=S.hab.dt;S.tm=S.hab.dt;S.hov='doing';rHov();
+  S.int=setInterval(function(){S.ti--;updHovT();
+    if(S.ti<=0){clearInterval(S.int);S.int=null;S.hov='done';S.st+=2;document.getElementById('sv').textContent=S.st;rHov();}
+  },1000);
+}
+function updHovT(){
+  if(S.hov!=='doing')return;
+  var ci=251.3,pg=(S.tm-S.ti)/S.tm;
+  var arc=document.getElementById('hov-arc'),nu=document.getElementById('hov-tnum');
+  if(arc)arc.setAttribute('stroke-dashoffset',(ci*(1-pg)).toFixed(1));
+  if(nu)nu.textContent=Math.floor(S.ti/60)+':'+(S.ti%60).toString().padStart(2,'0');
+}
+function pauseHov(){if(S.int){clearInterval(S.int);S.int=null;}S.hov='ready';rHov();}
+function exitHov(){
+  if(S.int){clearInterval(S.int);S.int=null;}
+  S.hov=null;S.hab=null;
+  document.getElementById('hov').classList.add('hid');
+  document.getElementById('hov-exit').style.display='';
+  sA('an-b');sB('안녕 '+nm()+'! 오늘은 뭘 해볼까요? 😊');
+}
+function rCal(){
+  sA('an-b');sB(nm()+'의 도장판이에요! 📅');
+  var c=CH[S.c];var days=['일','월','화','수','목','금','토'];
+  var dl=days.map(function(d){return '<div class="cdl">'+d+'</div>';}).join('');
+  var em2='';for(var i=0;i<5;i++)em2+='<div class="cdy mt"></div>';
+  var cells='';
+  for(var d=1;d<=31;d++){
+    var td=d===14,cs=CAL[d];
+    var st2=cs&&cs.length>0?(HB.find(function(h){return h.id===cs[0];})||{em:''}).em:'';
+    cells+='<div class="cdy" style="'+(td?'outline:2.5px solid '+c.acc+';outline-offset:-2px':'')+(cs&&cs.length>0?';background:'+c.bg:'')+'">'+(cs&&cs.length>0?'<div class="ds">'+st2+'</div>':'')+'<div class="dn">'+(td?'<b style="color:'+c.dk+'">'+d+'</b>':d)+'</div></div>';
+  }
+  document.getElementById('pb').innerHTML=
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:16px;font-weight:800">2026년 5월 📅</span><span style="font-size:13px;font-weight:700;color:#888">오늘 14일</span></div>'+
+    '<div class="cag">'+dl+em2+cells+'</div>'+
+    '<div style="background:#F0F0EE;border-radius:16px;padding:13px 16px;display:flex;align-items:center;gap:13px;margin-bottom:12px"><span style="font-size:28px">🔥</span><div><div style="font-size:19px;font-weight:800">5일 연속!</div><div style="font-size:13px;font-weight:700;color:#888">'+nm()+'의 연속 기록이에요 💪</div></div></div>'+
+    '<div style="font-size:15px;font-weight:700;color:#888;text-align:center">⭐ 총 '+S.st+'개의 별을 모았어요!</div>';
+}
+function showO(){
+  var c=CH[S.c];var ov=document.getElementById('ov');
+  ov.style.background=c.bg+'EF';
+  document.getElementById('og').innerHTML=CH.map(function(ch){return '<div class="co'+(ch.id===S.c?' sl':'')+'" onclick="selC('+ch.id+')" style="border-color:'+(ch.id===S.c?ch.acc:'transparent')+'">'+gS(ch.id,76)+'<div class="cnm">'+ch.nm+'</div><div class="ctp">'+ch.tp+'</div></div>';}).join('');
+  document.getElementById('cok').style.background=c.acc;
+  ov.classList.remove('hid');setTimeout(function(){emP(document.getElementById('W'));},30);
+}
+function selC(id){
+  S.c=id;var c=CH[id];
+  document.querySelectorAll('.co').forEach(function(el,i){el.classList.toggle('sl',i===id);el.style.borderColor=i===id?c.acc:'transparent';});
+  document.getElementById('ov').style.background=c.bg+'EF';
+  document.getElementById('cok').style.background=c.acc;
+}
+function hideO(){document.getElementById('ov').classList.add('hid');apT();if(S.pan)rP();}
+apT();setTimeout(function(){emP(document.getElementById('W'));},120);
+</script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+node_modules
+.expo
+dist
+coverage
+.env
+.DS_Store
+
+# Node / Expo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.expo-shared
+
+# Build output
+build
+*.tmp
+*.temp
+
+# Unity generated files
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+MemoryCaptures/
+Recordings/
+*.csproj
+*.sln
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# OS / editor
+.vscode/
+.idea/

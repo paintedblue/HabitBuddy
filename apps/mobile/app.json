@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "동요 친구",
+    "slug": "habit-buddy",
+    "scheme": "habitbuddy",
+    "orientation": "landscape",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFF4E2"
+      }
+    },
+    "plugins": ["expo-router"]
+  }
+}
