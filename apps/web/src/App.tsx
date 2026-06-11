@@ -185,17 +185,16 @@ export function App() {
   return (
     <main className={routineActive ? 'app-shell routine-mode' : 'app-shell'}>
       <section className={panelOpen ? 'stage dimmed' : 'stage'} style={{ '--accent': character.accent } as CSSProperties}>
-        <TopBar
-          character={character}
-          childName={profile.name}
-          panelOpen={panelOpen}
-          onLock={lockApp}
-          onOpenCharacterPicker={() => setCharacterPickerOpen((open) => !open)}
-        />
+        <TopBar character={character} childName={profile.name} panelOpen={panelOpen} onLock={lockApp} />
         {routine.status === 'home' && characterPickerOpen ? (
           <CharacterPicker selected={character} onSelect={selectCharacter} />
         ) : null}
-        <HomeScene message={message} routineActive={routineActive} />
+        <HomeScene
+          character={character}
+          message={message}
+          routineActive={routineActive}
+          onOpenCharacterPicker={() => setCharacterPickerOpen((open) => !open)}
+        />
         {!routineActive ? <BottomTabs activeTab={tab} character={character} onChange={changeTab} /> : null}
       </section>
 
@@ -333,15 +332,14 @@ function TopBar({
   character,
   childName,
   onLock,
-  onOpenCharacterPicker,
   panelOpen = false
 }: {
   character: Character;
   childName?: string;
   onLock?: () => void;
-  onOpenCharacterPicker?: () => void;
   panelOpen?: boolean;
 }) {
+  const initial = (childName?.trim()[0] ?? 'Y').toUpperCase();
   return (
     <header className={panelOpen ? 'top-bar panel-open' : 'top-bar'}>
       <div className="brand-pill">
@@ -351,21 +349,18 @@ function TopBar({
       <div className="top-user-group">
         {childName ? (
           <div className="child-pill" aria-label={`현재 아이 ${childName}`}>
-            {childName}
+            <span>{initial}</span>
+            <strong>{childName}</strong>
           </div>
         ) : null}
-        {onOpenCharacterPicker ? (
-          <button className="character-pill character-button" type="button" aria-label="캐릭터 선택" onClick={onOpenCharacterPicker}>
-            {character.name}
-          </button>
-        ) : (
+        {!onLock ? (
           <div className="character-pill static" aria-label={`현재 친구 ${character.name}`}>
             {character.name}
           </div>
-        )}
+        ) : null}
         {onLock ? (
           <button className="lock-button" type="button" aria-label="로그인 잠금" onClick={onLock}>
-            잠금
+            🔒
           </button>
         ) : null}
       </div>
@@ -403,7 +398,17 @@ function CharacterPicker({ onSelect, selected }: { onSelect: (character: Charact
   );
 }
 
-function HomeScene({ message, routineActive }: { message: string; routineActive: boolean }) {
+function HomeScene({
+  character,
+  message,
+  onOpenCharacterPicker,
+  routineActive
+}: {
+  character: Character;
+  message: string;
+  onOpenCharacterPicker: () => void;
+  routineActive: boolean;
+}) {
   if (routineActive) return null;
 
   return (
@@ -412,7 +417,10 @@ function HomeScene({ message, routineActive }: { message: string; routineActive:
         <HabitScene drawerOpen={false} mood="idle" rewardPulse={false} stage="main" variant="home" />
       </div>
       <div className="home-prompt">
-        <small>♪ 동요 친구</small>
+        <button className="home-character-link" type="button" onClick={onOpenCharacterPicker}>
+          <span>♪</span>
+          {character.name}
+        </button>
         <p>{message}</p>
         <span />
       </div>
@@ -421,10 +429,10 @@ function HomeScene({ message, routineActive }: { message: string; routineActive:
 }
 
 function BottomTabs({ activeTab, character, onChange }: { activeTab: Tab | null; character: Character; onChange: (tab: Tab) => void }) {
-  const tabs: Array<{ id: Tab; icon: string; label: string; color: string; tone: string }> = [
-    { id: 'profile', icon: '★', label: '내 동요 만들기', color: '#DDEBFF', tone: '#2C83E6' },
-    { id: 'routine', icon: '▶', label: '같이 해봐요!', color: '#DDF8E7', tone: '#06A956' },
-    { id: 'stamps', icon: '✓', label: '내 도장판', color: '#FFF0D9', tone: '#D66C00' }
+  const tabs: Array<{ id: Tab; icon: string; label: string; description: string; color: string; tone: string }> = [
+    { id: 'profile', icon: '♪', label: '내 동요 만들기', description: '아이 이름으로 새 동요를 만들어요', color: '#DDEBFF', tone: '#2C83E6' },
+    { id: 'routine', icon: '▶', label: '같이 해봐요!', description: '고른 동요로 습관을 시작해요', color: '#DDF8E7', tone: '#06A956' },
+    { id: 'stamps', icon: '✪', label: '내 도장판', description: '완료한 습관 도장을 확인해요', color: '#FFF0D9', tone: '#D66C00' }
   ];
 
   return (
@@ -443,6 +451,7 @@ function BottomTabs({ activeTab, character, onChange }: { activeTab: Tab | null;
         >
           <span>{item.icon}</span>
           <strong>{item.label}</strong>
+          <small>{item.description}</small>
         </button>
       ))}
     </nav>
@@ -628,7 +637,6 @@ function ProfilePanel({
           saving={savingSong}
           onPlay={togglePreview}
           onRegenerate={regenerate}
-          onSaveAnother={() => void saveAndMakeAnother()}
           onSaveAndGoRoutine={() => void saveAndGoRoutine()}
         />
       )}
@@ -876,7 +884,6 @@ function SongResult({
   onPlay,
   onRegenerate,
   onSaveAndGoRoutine,
-  onSaveAnother,
   playing,
   preview,
   progress,
@@ -885,42 +892,54 @@ function SongResult({
   onPlay: () => void;
   onRegenerate: () => void;
   onSaveAndGoRoutine: () => void;
-  onSaveAnother: () => void;
   playing: boolean;
   preview: SongPreview;
   progress: number;
   saving: boolean;
 }) {
+  const elapsedSeconds = Math.round((progress / 100) * previewDurationSeconds);
   return (
     <div className="song-result">
-      <WizardQuestion title="나만의 동요가 완성됐어요" subtitle="재생 버튼을 눌러 들어봐요" />
+      <div className="song-complete-header">
+        <div className="song-complete-badge">★ 완성!</div>
+        <h2>나만의 동요가 완성됐어요</h2>
+        <p>재생 버튼을 눌러 들어봐요</p>
+      </div>
       <section className="song-result-card">
         <p className="song-eyebrow">동요 제목</p>
         <h2>{preview.title}</h2>
         <p className="song-lyrics">{preview.lyrics}</p>
-        <div className="song-progress" aria-label="재생 진행률">
-          <span style={{ width: `${progress}%` }} />
-        </div>
-        <div className="song-action-row">
-          <button className="song-play-button" type="button" onClick={onPlay}>
-            {playing ? 'Ⅱ' : '▶'}
-            <span>{playing ? '잠깐 멈춤' : '재생하기'}</span>
-          </button>
-          <button className="song-regenerate-button" type="button" onClick={onRegenerate}>
-            ↻ 재생성
-          </button>
-        </div>
-        <div className="song-save-row">
-          <button className="song-secondary-button" type="button" disabled={saving} onClick={onSaveAnother}>
-            저장하고 다른 동요 만들기
-          </button>
-          <button className="song-routine-button" type="button" disabled={saving} onClick={onSaveAndGoRoutine}>
-            {saving ? '저장 중...' : '이 동요 저장하고 같이 해보기'}
-          </button>
+      </section>
+      <section className="song-player-card" aria-label="동요 재생">
+        <button className="song-play-button" type="button" aria-label={playing ? '잠깐 멈춤' : '재생하기'} onClick={onPlay}>
+          {playing ? 'Ⅱ' : '▶'}
+        </button>
+        <div className="song-player-main">
+          <div className="song-progress" aria-label="재생 진행률">
+            <span style={{ width: `${progress}%` }} />
+          </div>
+          <div className="song-time-row">
+            <span>{formatPreviewTime(elapsedSeconds)}</span>
+            <span>{formatPreviewTime(previewDurationSeconds)}</span>
+          </div>
         </div>
       </section>
+      <div className="song-save-row">
+        <button className="song-routine-button" type="button" disabled={saving} onClick={onSaveAndGoRoutine}>
+          {saving ? '저장 중...' : '이 동요로 같이 해보기'}
+        </button>
+        <button className="song-regenerate-button" type="button" disabled={saving} onClick={onRegenerate}>
+          ↻ 다시 만들기
+        </button>
+      </div>
     </div>
   );
+}
+
+function formatPreviewTime(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const rest = (seconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${rest}`;
 }
 
 function buildSongPreview(profile: ChildProfile, variant: number) {
@@ -1041,26 +1060,32 @@ function RoutinePicker({
 
   if (step === 'song') {
     return (
-      <section className="panel-page routine-picker-page">
-        <PanelTitle icon="▶" title="동요를 골라요" />
+      <section className="panel-page routine-picker-page song-pick-page">
+        <div className="song-pick-title">
+          <span>▶</span>
+          <h1>동요를 골라요</h1>
+        </div>
         <Dots active={2} count={3} color="#F5962A" />
         <div className="routine-step-header">
           <button className="routine-step-back" type="button" onClick={() => setStep('habit')}>
             ← 습관 다시 고르기
           </button>
-          <div className="song-picker-header large">
+          <div className="song-pick-habit">
             <span>{selectedHabit.emoji}</span>
             <strong>{selectedHabit.name} 동요</strong>
           </div>
         </div>
-        <div className="song-choice-list expanded">
+        <div className="song-choice-list expanded song-pick-list">
           {habitSongs.map((song) => (
             <SongChoiceCard key={song.id} selected={selectedSong?.id === song.id} song={song} onClick={() => setSelectedSongId(song.id)} />
           ))}
         </div>
-        <div className="routine-start-card">
+        <div className="song-pick-footer">
           <span>{selectedHabit.emoji}</span>
-          <strong>{selectedSong?.title ?? selectedHabit.name}</strong>
+          <div>
+            <small>선택한 동요</small>
+            <strong>{selectedSong?.title ?? selectedHabit.name}</strong>
+          </div>
           <button className="next-button full" type="button" disabled={!selectedSong} onClick={() => selectedSong ? onStart(selectedHabit, selectedSong) : undefined}>
             이 동요로 시작하기
           </button>
@@ -1103,9 +1128,13 @@ function SongChoiceCard({ onClick, selected, song }: { onClick: () => void; sele
 
   return (
     <button className={selected ? 'song-choice-card selected' : 'song-choice-card'} type="button" onClick={onClick}>
-      <span>{selected ? '✓' : '♪'}</span>
-      <strong>{song.title}</strong>
-      <small>{melody} · {preview}</small>
+      <span className="song-choice-play">▶</span>
+      <div className="song-choice-copy">
+        <em>{melody}</em>
+        <strong>{song.title}</strong>
+        <small>“{preview}”</small>
+      </div>
+      <b>{selected ? '✓' : ''}</b>
     </button>
   );
 }

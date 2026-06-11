@@ -13,7 +13,7 @@
     {
       "id": "squirrel",
       "displayName": "Squirrel",
-      "file": "squirrel/squirrel_eating_vegetable_v1.glb",
+      "file": "squirrel/squirrel_eat_chew_v1.glb",
       "skeleton": "custom-31",
       "skeletonNote": "Mixamo-derived but bones renamed without the 'mixamorig:' prefix; 31 bones, no finger bones. NOT directly clip-compatible with the rabbit rig.",
       "clips": ["eat_vegetable", "broccoli"],

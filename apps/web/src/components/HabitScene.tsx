@@ -21,7 +21,7 @@ const characterFiles: Record<CharacterMood, { url: string; type: 'fbx' | 'glb' }
   walk: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
   wave: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
   brush: { url: '/assets/characters/fox_brushing_teeth_v4.glb', type: 'glb' },
-  eat: { url: '/assets/characters/squirrel/squirrel_eating_vegetable_v1.glb', type: 'glb' },
+  eat: { url: '/assets/characters/squirrel/squirrel_eat_chew_v1.glb', type: 'glb' },
   celebrate: { url: '/assets/characters/RumbaDancing.fbx', type: 'fbx' },
   reward: { url: '/assets/characters/RumbaDancing.fbx', type: 'fbx' }
 };
