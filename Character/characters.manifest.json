@@ -1,0 +1,43 @@
+{
+  "motion": "eat_vegetable",
+  "fps": 30,
+  "frameRange": [1, 192],
+  "durationSeconds": 6.4,
+  "clips": {
+    "body": "eat_vegetable",
+    "prop": "broccoli"
+  },
+  "assetBase": "/assets/characters",
+  "notes": "Each GLB is self-contained: skinned mesh + skeleton + 2 animation clips. Play BOTH clips together on one AnimationMixer for the full effect (character motion + broccoli shrinking as it is eaten). The broccoli prop is parented to the left hand and disappears around frame 55. Files live in per-character subfolders under /assets/characters.",
+  "characters": [
+    {
+      "id": "squirrel",
+      "displayName": "Squirrel",
+      "file": "squirrel/squirrel_eating_vegetable_v1.glb",
+      "skeleton": "custom-31",
+      "skeletonNote": "Mixamo-derived but bones renamed without the 'mixamorig:' prefix; 31 bones, no finger bones. NOT directly clip-compatible with the rabbit rig.",
+      "clips": ["eat_vegetable", "broccoli"],
+      "props": ["broccoli"],
+      "rootScale": 0.01,
+      "sizeMB": 25.1
+    },
+    {
+      "id": "rabbit",
+      "displayName": "Rabbit",
+      "file": "rabbit/rabbit_eating_vegetable_v1.glb",
+      "skeleton": "mixamorig-41",
+      "skeletonNote": "Standard Mixamo rig ('mixamorig:' prefix); 41 bones including fingers. Recommended target rig for new characters.",
+      "clips": ["eat_vegetable", "broccoli"],
+      "props": ["broccoli"],
+      "rootScale": 0.01,
+      "sizeMB": 21.1
+    }
+  ],
+  "other": [
+    {
+      "file": "fox_brushing_teeth_v4.glb",
+      "motion": "brushing_teeth",
+      "note": "Pre-existing export at the public root (apps/web/public/assets/characters/). The squirrel character; kept at root to avoid breaking its existing import path."
+    }
+  ]
+}
