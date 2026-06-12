@@ -414,7 +414,7 @@ function HomeScene({
   return (
     <>
       <div className="home-3d-scene">
-        <HabitScene drawerOpen={false} mood="idle" rewardPulse={false} stage="main" variant="home" />
+        <HabitScene drawerOpen={false} mood="wave" rewardPulse={false} stage="main" variant="home" />
       </div>
       <div className="home-prompt">
         <button className="home-character-link" type="button" onClick={onOpenCharacterPicker}>

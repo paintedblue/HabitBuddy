@@ -138,7 +138,7 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
     if (!group.current) return;
     const t = clock.getElapsedTime();
     const drawerShift = drawerOpen ? -1.35 : 0;
-    const activeBounce = mood === 'brush' || mood === 'eat' ? 0 : Math.abs(Math.sin(t * 7.4)) * (mood === 'reward' ? 0.2 : 0.1);
+    const activeBounce = variant === 'home' || mood === 'brush' || mood === 'eat' ? 0 : Math.abs(Math.sin(t * 7.4)) * (mood === 'reward' ? 0.2 : 0.1);
     const sway = mood === 'celebrate' || mood === 'reward'
       ? Math.sin(t * 4.5) * 0.13
       : mood === 'walk'
