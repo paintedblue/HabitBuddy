@@ -21,7 +21,9 @@ const characterFiles: Record<CharacterMood, { url: string; type: 'fbx' | 'glb' }
   walk: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
   wave: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
   brush: { url: '/assets/characters/fox_brushing_teeth_v4.glb', type: 'glb' },
+  wash: { url: '/assets/characters/movement/fox_washing_hands.glb', type: 'glb' },
   eat: { url: '/assets/characters/squirrel/squirrel_eat_chew_v1.glb', type: 'glb' },
+  mop: { url: '/assets/characters/char1_mopping_loop_fixed.fbx', type: 'fbx' },
   celebrate: { url: '/assets/characters/RumbaDancing.fbx', type: 'fbx' },
   reward: { url: '/assets/characters/RumbaDancing.fbx', type: 'fbx' }
 };
@@ -71,9 +73,11 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
     : { position: new THREE.Vector3(0, -2, 0), scale: 0.00016875, rotationY: 0 };
   const modelSettings = mood === 'brush'
     ? { position: new THREE.Vector3(-0.65, -2.35, 0), scale: 1.95, rotationY: 0 }
-    : mood === 'eat'
-      ? { position: new THREE.Vector3(0, -2.1, 0), scale: 1.95, rotationY: 0 }
-      : base;
+    : mood === 'wash'
+      ? { position: new THREE.Vector3(-0.65, -2.35, 0), scale: 1.95, rotationY: 0 }
+      : mood === 'eat'
+        ? { position: new THREE.Vector3(0, -2.1, 0), scale: 1.95, rotationY: 0 }
+        : base;
   const variantOffset = variant === 'routine'
     ? new THREE.Vector3(-1.45, 0, 0)
     : new THREE.Vector3(0, variant === 'home' ? -0.05 : 0, 0);
@@ -91,13 +95,21 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
         object.receiveShadow = true;
         if (characterFile.type === 'glb') return;
 
-        object.material = new THREE.MeshStandardMaterial({
-          map: texture,
-          color: '#eee2d3',
-          roughness: 0.85,
-          metalness: 0,
-          side: THREE.DoubleSide
-        });
+        const isMop = object.name.toLowerCase().startsWith('mop');
+        object.material = isMop
+          ? new THREE.MeshStandardMaterial({
+              color: '#ffffff',
+              roughness: 0.9,
+              metalness: 0,
+              side: THREE.DoubleSide
+            })
+          : new THREE.MeshStandardMaterial({
+              map: texture,
+              color: '#eee2d3',
+              roughness: 0.85,
+              metalness: 0,
+              side: THREE.DoubleSide
+            });
       }
 
       const normalized = object.name.toLowerCase().replace(/^mixamorig:/, '');
@@ -110,21 +122,32 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
   useEffect(() => {
     mixer.current?.stopAllAction();
     mixer.current = new THREE.AnimationMixer(model);
-    const clip = mood === 'brush'
-      ? animations.find((item) => item.name.toLowerCase().includes('brushing') && item.tracks.length > 0)
-        ?? animations.find((item) => item.tracks.length > 0)
-      : mood === 'eat'
-        ? animations.find((item) => item.name.toLowerCase().includes('eat') && item.tracks.length > 0)
-        ?? animations.find((item) => item.tracks.length > 0)
-      : animations.find((item) => item.tracks.length > 0);
+    const clip = mood === 'mop'
+      ? animations.find((item) => item.name.toLowerCase() === 'scene' && item.tracks.length > 0)
+      : mood === 'wash'
+        ? animations.find((item) => item.name.toLowerCase() === 'handwash' && item.tracks.length > 0)
+      : mood === 'brush'
+          ? animations.find((item) => item.name.toLowerCase().includes('brushing') && item.tracks.length > 0)
+            ?? animations.find((item) => item.tracks.length > 0)
+          : mood === 'eat'
+            ? animations.find((item) => item.name.toLowerCase().includes('eat') && item.tracks.length > 0)
+              ?? animations.find((item) => item.tracks.length > 0)
+            : animations.find((item) => item.tracks.length > 0);
+    const clips = clip ? [clip] : [];
 
-    if (clip) {
-      const action = mixer.current.clipAction(clip);
+    clips.forEach((item) => {
+      const action = mixer.current!.clipAction(item);
       action.reset();
       action.setLoop(THREE.LoopRepeat, Number.POSITIVE_INFINITY);
       action.clampWhenFinished = false;
       action.timeScale = mood === 'walk' ? 0.85 : mood === 'brush' ? 1.05 : 1;
       action.play();
+    });
+
+    if (clips.length === 0 && mood === 'mop') {
+      console.warn('The mopping FBX does not contain a playable Scene animation clip.');
+    } else if (clips.length === 0 && mood === 'wash') {
+      console.warn('The hand-washing GLB does not contain a playable HandWash animation clip.');
     }
 
     return () => {
@@ -138,7 +161,9 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
     if (!group.current) return;
     const t = clock.getElapsedTime();
     const drawerShift = drawerOpen ? -1.35 : 0;
-    const activeBounce = variant === 'home' || mood === 'brush' || mood === 'eat' ? 0 : Math.abs(Math.sin(t * 7.4)) * (mood === 'reward' ? 0.2 : 0.1);
+    const activeBounce = variant === 'home' || mood === 'brush' || mood === 'wash' || mood === 'eat' || mood === 'mop'
+      ? 0
+      : Math.abs(Math.sin(t * 7.4)) * (mood === 'reward' ? 0.2 : 0.1);
     const sway = mood === 'celebrate' || mood === 'reward'
       ? Math.sin(t * 4.5) * 0.13
       : mood === 'walk'
@@ -154,11 +179,11 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
     group.current.rotation.set(0, modelSettings.rotationY + spin, 0);
     group.current.scale.setScalar(modelSettings.scale * variantScale);
 
-    if (mood !== 'idle' && mood !== 'appear' && mood !== 'brush' && mood !== 'eat') {
+    if (mood !== 'idle' && mood !== 'appear' && mood !== 'brush' && mood !== 'wash' && mood !== 'eat' && mood !== 'mop') {
       animateRigPart(rightArm.current, mood, t, 'right');
       animateRigPart(leftArm.current, mood, t, 'left');
     }
-    if (head.current && mood !== 'idle' && mood !== 'appear' && mood !== 'brush' && mood !== 'eat') {
+    if (head.current && mood !== 'idle' && mood !== 'appear' && mood !== 'brush' && mood !== 'wash' && mood !== 'eat' && mood !== 'mop') {
       head.current.rotation.x += Math.sin(t * 2.2) * 0.025;
       head.current.rotation.z += Math.sin(t * 1.7) * 0.02;
     }

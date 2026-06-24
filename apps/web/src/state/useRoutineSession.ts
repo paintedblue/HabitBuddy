@@ -4,7 +4,7 @@ import { playCueSound, playRewardSound, startRoutineLoop, stopRoutineLoop } from
 import { habitBuddyDb, type LocalGeneratedSong } from '../storage/db';
 
 export type RoutineStatus = 'home' | 'cue' | 'routine' | 'awaiting_parent' | 'reward';
-export type CharacterMood = 'idle' | 'appear' | 'walk' | 'wave' | 'brush' | 'eat' | 'celebrate' | 'reward';
+export type CharacterMood = 'idle' | 'appear' | 'walk' | 'wave' | 'brush' | 'wash' | 'eat' | 'mop' | 'celebrate' | 'reward';
 
 function event(type: RoutineEventType) {
   return { id: `event-${Date.now()}-${type}`, type, at: new Date().toISOString() };
@@ -20,7 +20,9 @@ function isBathroomHabit(habit: HabitTemplate | undefined) {
 
 function routineMoodForHabit(habit: HabitTemplate): CharacterMood {
   if (habit.id === 'brush') return 'brush';
+  if (habit.id === 'wash') return 'wash';
   if (habit.id === 'veggie') return 'eat';
+  if (habit.id === 'tidy') return 'mop';
   return 'celebrate';
 }
 
