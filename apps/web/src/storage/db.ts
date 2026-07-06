@@ -8,12 +8,27 @@ export interface LocalAuth {
 
 export interface LocalGeneratedSong {
   id: string;
+  requestId?: string;
   childId: string;
   habitId: HabitId;
   title: string;
   lyrics: string;
+  audioUrl?: string;
+  streamAudioUrl?: string;
+  imageUrl?: string;
+  sourceAudioUrl?: string;
+  externalSongId?: string;
+  externalTaskId?: string;
+  provider?: 'sunoapi';
+  durationSeconds?: number;
+  modelName?: string;
   melodyPresetId?: MelodyPresetId;
-  status: 'approved' | 'draft';
+  referenceAudioUrl?: string;
+  referenceAudioFileName?: string;
+  referenceAudioDurationSeconds?: number;
+  errorCode?: string;
+  errorMessage?: string;
+  status: 'approved' | 'draft' | 'queued' | 'generating' | 'failed';
   createdAt: string;
   lastUsedAt?: string;
   inputs: {
@@ -49,6 +64,10 @@ export const habitBuddyDb = {
     window.localStorage.setItem(authKey, JSON.stringify(auth));
   },
 
+  async clearAuth() {
+    window.localStorage.removeItem(authKey);
+  },
+
   async getProfile(): Promise<ChildProfile | null> {
     return readJson<ChildProfile | null>(profileKey, null);
   },
@@ -75,6 +94,10 @@ export const habitBuddyDb = {
     const songs = readJson<LocalGeneratedSong[]>(songsKey, []);
     const next = [song, ...songs.filter((item) => item.id !== song.id)];
     window.localStorage.setItem(songsKey, JSON.stringify(next));
+  },
+
+  async replaceSongs(songs: LocalGeneratedSong[]) {
+    window.localStorage.setItem(songsKey, JSON.stringify(songs));
   },
 
   async listRoutineSessions(): Promise<RoutineSession[]> {

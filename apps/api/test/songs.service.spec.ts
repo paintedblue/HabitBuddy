@@ -1,13 +1,80 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { GeneratedSong, SongGenerationRequest } from '@habit-buddy/shared';
 import { SongsService } from '../src/songs/songs.service.js';
+
+function createRepositoryMock() {
+  const requests = new Map<string, SongGenerationRequest>();
+  const songs = new Map<string, GeneratedSong>();
+  return {
+    createRequest: vi.fn(async (request: SongGenerationRequest) => {
+      requests.set(request.id, request);
+      return request;
+    }),
+    getRequest: vi.fn(async (id: string) => requests.get(id) ?? null),
+    findRequestByExternalTaskId: vi.fn(async (taskId: string) => [...requests.values()].find((request) => request.externalTaskId === taskId) ?? null),
+    updateRequest: vi.fn(async (request: SongGenerationRequest) => {
+      requests.set(request.id, request);
+      return request;
+    }),
+    saveSong: vi.fn(async (song: GeneratedSong) => {
+      songs.set(song.id, song);
+      return song;
+    }),
+    getSong: vi.fn(async (id: string) => songs.get(id) ?? null),
+    listPendingSongs: vi.fn(async () => [...songs.values()].filter((song) => song.status === 'pending_approval'))
+  };
+}
 
 describe('SongsService', () => {
   it('creates a queued request and approves generated songs', async () => {
-    const service = new SongsService({ add: vi.fn() } as never);
+    const repository = createRepositoryMock();
+    const service = new SongsService({ add: vi.fn() } as never, repository as never);
     const request = await service.createRequest({ childId: 'c1', habitId: 'brush', prompt: '토리와 양치' });
-    const song = service.completeGeneration(request.id, '노래');
+    const song = await service.completeGeneration(request.id, '노래');
     expect(request.status).toBe('pending_approval');
-    expect(service.listPending()).toHaveLength(1);
-    expect(service.review(song.id, true).status).toBe('approved');
+    await expect(service.listPending()).resolves.toHaveLength(1);
+    await expect(service.review(song.id, true)).resolves.toMatchObject({ status: 'approved' });
+  });
+
+  it('tracks Suno task state and stores completed audio metadata', async () => {
+    const repository = createRepositoryMock();
+    const service = new SongsService({ add: vi.fn() } as never, repository as never);
+    const request = await service.createRequest({
+      childId: 'c1',
+      habitId: 'brush',
+      prompt: '노래 가사',
+      inputs: {
+        childName: '토리',
+        referenceAudioUrl: 'https://example.com/reference.mp3',
+        melodyPresetId: 'energetic',
+        generationMode: 'reference_audio'
+      }
+    });
+
+    await expect(service.markGenerating(request.id, 'task-1')).resolves.toMatchObject({ status: 'generating' });
+    const song = await service.completeSunoGeneration(request.id, {
+      id: 'clip-1',
+      title: '토리의 양치 노래',
+      audio_url: 'https://example.com/song.mp3',
+      stream_audio_url: 'https://example.com/stream',
+      prompt: '노래 가사',
+      duration: 42
+    });
+
+    await expect(service.getRequest(request.id)).resolves.toMatchObject({ status: 'approved' });
+    expect(song.provider).toBe('sunoapi');
+    expect(song.audioUrl).toBe('https://example.com/song.mp3');
+    expect(song.durationSeconds).toBe(42);
+    expect(song.melodyPresetId).toBe('energetic');
+  });
+
+  it('marks requests as failed with an error code', async () => {
+    const repository = createRepositoryMock();
+    const service = new SongsService({ add: vi.fn() } as never, repository as never);
+    const request = await service.createRequest({ childId: 'c1', habitId: 'brush', prompt: '토리와 양치' });
+    await expect(service.failRequest(request.id, 'missing_reference_audio', 'Reference audio is required')).resolves.toMatchObject({
+      status: 'failed',
+      errorCode: 'missing_reference_audio'
+    });
   });
 });

@@ -22,6 +22,23 @@ function pushPatternFailures(fails: Violation[], code: string, message: string, 
   if (matched) fails.push({ code, message, detail: matched.source });
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function checkCurrentIdentityDeclaration(lyrics: string, clean: CleanInputs, fails: Violation[]) {
+  const aspiration = clean.aspiration.trim();
+  if (!aspiration || aspiration === '멋진 친구') return;
+
+  const declarationPattern = new RegExp(`너는 지금[^\\n.!?]*(?:${escapeRegExp(aspiration)})`, 'i');
+  if (declarationPattern.test(lyrics)) {
+    fails.push({
+      code: 'current_identity_declaration',
+      message: 'Lyrics must not declare the child is already the aspiration role.'
+    });
+  }
+}
+
 function checkStructure(lyrics: string, fails: Violation[]) {
   const tagMatches = lyrics.match(/\[(Verse 1|Chorus|Verse 2|Outro)\]/g) ?? [];
   const required = rules.requiredTags;
@@ -69,6 +86,7 @@ export function deterministicChecks(lyrics: string, clean: CleanInputs): Determi
   pushPatternFailures(fails, 'instruction_injection', 'Instruction-like text is not allowed in lyrics.', blockedPatterns.instructionInjection, lyrics);
   pushPatternFailures(fails, 'profanity_hate_sexual', 'Profanity, hate, or sexual language is not allowed.', unsafeLexicon.profanityHateSexual, lyrics);
   pushPatternFailures(fails, 'self_harm_eating_body', 'Self-harm, eating guilt, or body-shaming language is not allowed.', unsafeLexicon.selfHarmEatingBody, lyrics);
+  checkCurrentIdentityDeclaration(lyrics, clean, fails);
   checkPii(lyrics, clean, fails);
 
   return { pass: fails.length === 0, fails };

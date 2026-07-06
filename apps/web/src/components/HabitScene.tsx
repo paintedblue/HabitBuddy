@@ -20,7 +20,14 @@ const characterFiles: Record<CharacterMood, { url: string; type: 'fbx' | 'glb' }
   appear: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
   walk: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
   wave: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
-  brush: { url: '/assets/characters/fox_brushing_teeth_v4.glb', type: 'glb' },
+  reach_forward: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
+  look_around: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
+  point: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
+  thumbs_up: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
+  stretch: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
+  yawn: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
+  mouth_open_wide: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
+  brush: { url: '/assets/characters/final_squirrel_brushing_teeth.glb', type: 'glb' },
   wash: { url: '/assets/characters/movement/fox_washing_hands.glb', type: 'glb' },
   eat: { url: '/assets/characters/squirrel/squirrel_eat_chew_v1.glb', type: 'glb' },
   mop: { url: '/assets/characters/char1_mopping_loop_fixed.fbx', type: 'fbx' },
@@ -122,6 +129,7 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
   useEffect(() => {
     mixer.current?.stopAllAction();
     mixer.current = new THREE.AnimationMixer(model);
+
     const clip = mood === 'mop'
       ? animations.find((item) => item.name.toLowerCase() === 'scene' && item.tracks.length > 0)
       : mood === 'wash'
@@ -202,6 +210,36 @@ function animateRigPart(part: THREE.Object3D | null, mood: CharacterMood, t: num
   if (mood === 'wave') {
     part.rotation.x += -0.55;
     part.rotation.z += mirror * (0.45 + Math.sin(t * 10) * 0.34);
+    return;
+  }
+  if (mood === 'reach_forward') {
+    part.rotation.x += -0.95 + Math.sin(t * 4) * 0.05;
+    part.rotation.z += mirror * 0.18;
+    return;
+  }
+  if (mood === 'look_around') {
+    part.rotation.x += -0.05;
+    part.rotation.z += mirror * 0.08;
+    return;
+  }
+  if (mood === 'point') {
+    part.rotation.x += side === 'right' ? -1.0 : -0.18;
+    part.rotation.z += side === 'right' ? 0.55 + Math.sin(t * 3) * 0.04 : -0.1;
+    return;
+  }
+  if (mood === 'thumbs_up') {
+    part.rotation.x += -0.7;
+    part.rotation.z += mirror * (0.5 + Math.sin(t * 8) * 0.08);
+    return;
+  }
+  if (mood === 'stretch') {
+    part.rotation.x += -1.35;
+    part.rotation.z += mirror * 0.55;
+    return;
+  }
+  if (mood === 'yawn' || mood === 'mouth_open_wide') {
+    part.rotation.x += -0.42 + Math.sin(t * 2.8) * 0.04;
+    part.rotation.z += mirror * 0.18;
     return;
   }
   if (mood === 'celebrate' || mood === 'reward') {

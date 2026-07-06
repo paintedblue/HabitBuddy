@@ -5,6 +5,8 @@ dist
 coverage
 .env
 .DS_Store
+*.bak
+apps/api/uploads/
 
 # Node / Expo
 npm-debug.log*

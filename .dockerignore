@@ -1,0 +1,20 @@
+node_modules
+**/node_modules
+.git
+.DS_Store
+apps/web/android/.gradle
+apps/web/android/app/build
+apps/web/dist
+apps/web/node_modules
+apps/mobile/node_modules
+apps/unity
+apps/My project
+Character
+image
+animation_using
+coverage
+**/coverage
+**/.turbo
+**/.cache
+**/dist
+!apps/api/uploads/reference-melodies/princess_bgm_cut.mp3

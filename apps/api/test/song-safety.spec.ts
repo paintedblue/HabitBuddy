@@ -20,10 +20,10 @@ const safeLyrics = [
   '우리 천천히 같이 해',
   '',
   '[Chorus]',
-  '토리야, 너는 지금 우주비행사!',
   '쓱쓱 싹싹 이를 닦아',
-  '뽀득뽀득 한 번 더',
-  '토리야, 너는 지금 우주비행사!',
+  '우주비행사 꿈에 한 걸음 가까워',
+  '뽀득뽀득 한 번 더 천천히',
+  '토리야, 오늘도 반짝 해보자',
   '',
   '[Verse 2]',
   '양치하기 하면 입안이 상쾌해져',
@@ -32,10 +32,10 @@ const safeLyrics = [
   '웃음이 톡톡 피어나',
   '',
   '[Chorus]',
-  '토리야, 너는 지금 우주비행사!',
   '쓱쓱 싹싹 이를 닦아',
-  '뽀득뽀득 한 번 더',
-  '토리야, 너는 지금 우주비행사!',
+  '우주비행사 꿈에 한 걸음 가까워',
+  '뽀득뽀득 한 번 더 천천히',
+  '토리야, 오늘도 반짝 해보자',
   '',
   '[Outro]',
   '다 했어! 잘했어 토리!',
@@ -58,7 +58,11 @@ describe('song safety deterministic checks', () => {
   });
 
   it('blocks future-role framing', () => {
-    expectBlocked(safeLyrics.replace('너는 지금 우주비행사', '나중에 우주비행사 될 거야'), 'future_role');
+    expectBlocked(safeLyrics.replace('우주비행사 꿈에 한 걸음 가까워', '나중에 우주비행사 될 거야'), 'future_role');
+  });
+
+  it('blocks direct current-role declarations', () => {
+    expectBlocked(safeLyrics.replace('우주비행사 꿈에 한 걸음 가까워', '토리야, 너는 지금 우주비행사!'), 'current_identity_declaration');
   });
 
   it('blocks loss or threat framing', () => {

@@ -1,12 +1,16 @@
 export type CharacterId = 'tori' | 'dali' | 'soopi' | 'bboyi';
-export type HabitId = 'brush' | 'wash' | 'tidy' | 'sleep' | 'veggie' | 'read';
-export type MelodyPresetId = 'energetic' | 'story' | 'follow' | 'calm';
+export type HabitId = 'brush' | 'wash' | 'tidy' | 'clothes' | 'veggie';
+export type MelodyPresetId = 'energetic' | 'story' | 'follow' | 'calm' | 'princess';
 export type RhythmPresetId = 'clapClap' | 'stepStep' | 'bubblePop' | 'brushBrush';
 export type InstrumentPresetId = 'piano' | 'xylophone' | 'ukulele' | 'ocarina';
 export type SongStatus = 'draft' | 'queued' | 'generating' | 'pending_approval' | 'approved' | 'rejected' | 'failed';
 export type RoutinePhase = 'cue' | 'routine' | 'reward';
 export type RoutineEventType =
   | 'session_started'
+  | 'prep_flow_started'
+  | 'prep_step_completed'
+  | 'prep_step_skipped'
+  | 'prep_flow_completed'
   | 'cue_started'
   | 'cue_completed'
   | 'routine_started'
@@ -98,6 +102,10 @@ export interface SongGenerationRequest {
   habitId: string;
   prompt: string;
   inputs?: SongGenerationInputs;
+  provider?: 'eachlabs' | 'sunoapi';
+  externalTaskId?: string;
+  errorCode?: string;
+  errorMessage?: string;
   status: SongStatus;
   createdAt: string;
 }
@@ -117,12 +125,21 @@ export interface SongGenerationInputs {
   generationMode?: 'text' | 'reference_audio';
   referenceAudioUrl?: string;
   referenceAudioFileName?: string;
+  referenceAudioDurationSeconds?: number;
+  sunoContinueAtSeconds?: number;
 }
 
 export interface SongLyricsJson {
   title: string;
   verse: string[];
   chorus: string[];
+}
+
+export interface GeneratedSongLyrics {
+  title: string;
+  lyrics: string;
+  provider: 'openai';
+  modelName: string;
 }
 
 export interface GeneratedSong {
@@ -132,15 +149,22 @@ export interface GeneratedSong {
   lyrics: string;
   structuredLyrics?: SongLyricsJson;
   audioUrl?: string;
+  streamAudioUrl?: string;
+  imageUrl?: string;
+  sourceAudioUrl?: string;
   externalSongId?: string;
   provider?: 'eachlabs' | 'sunoapi';
   targetDurationSeconds?: number;
+  durationSeconds?: number;
+  modelName?: string;
   melodyPresetId?: MelodyPresetId;
   rhythmPresetId?: RhythmPresetId;
   instrumentPresetId?: InstrumentPresetId;
   generationMode?: 'text' | 'reference_audio';
   referenceAudioUrl?: string;
   referenceAudioFileName?: string;
+  referenceAudioDurationSeconds?: number;
+  sunoContinueAtSeconds?: number;
   status: SongStatus;
 }
 
@@ -159,12 +183,11 @@ export const characters: Character[] = [
 ];
 
 export const habitTemplates: HabitTemplate[] = [
-  { id: 'brush', emoji: '🪥', name: '양치하기', durationSeconds: 120, starterLyric: '양치하자 시작!', progressLyric: '위아래로 치카치카' },
-  { id: 'wash', emoji: '🫧', name: '손 씻기', durationSeconds: 30, starterLyric: '손을 씻자 시작!', progressLyric: '거품거품 뽀글뽀글' },
-  { id: 'tidy', emoji: '🧹', name: '방 정리하기', durationSeconds: 120, starterLyric: '방을 정리하자 시작!', progressLyric: '제자리에 착착착' },
-  { id: 'sleep', emoji: '😴', name: '일찍자기', durationSeconds: 90, starterLyric: '잘 준비를 시작!', progressLyric: '포근포근 꿈나라로' },
-  { id: 'veggie', emoji: '🥦', name: '채소먹기', durationSeconds: 60, starterLyric: '채소 한 입 시작!', progressLyric: '아삭아삭 한 입씩' },
-  { id: 'read', emoji: '📚', name: '책 읽기', durationSeconds: 120, starterLyric: '책을 펼쳐 시작!', progressLyric: '한 장 한 장 읽어봐요' }
+  { id: 'brush', emoji: '🪥', name: '양치', durationSeconds: 120, starterLyric: '양치하자 시작!', progressLyric: '위아래로 치카치카' },
+  { id: 'wash', emoji: '🫧', name: '손씻기', durationSeconds: 30, starterLyric: '손을 씻자 시작!', progressLyric: '거품거품 뽀글뽀글' },
+  { id: 'tidy', emoji: '🧹', name: '정리정돈', durationSeconds: 120, starterLyric: '정리정돈 시작!', progressLyric: '제자리에 착착착' },
+  { id: 'clothes', emoji: '👕', name: '옷 정리하기', durationSeconds: 120, starterLyric: '옷 정리를 시작!', progressLyric: '차곡차곡 옷을 정리해요' },
+  { id: 'veggie', emoji: '🥦', name: '채소 먹기', durationSeconds: 60, starterLyric: '채소 한 입 시작!', progressLyric: '아삭아삭 한 입씩' }
 ];
 
 export interface MelodyPreset {
@@ -218,6 +241,16 @@ export const melodyPresets: MelodyPreset[] = [
     instrument: 'music box, soft piano, and gentle strings',
     mood: 'calm, soothing, safe, and comforting',
     rhythm: 'slow gentle rhythm with long sustained notes'
+  },
+  {
+    id: 'princess',
+    icon: '👑',
+    label: '공주 동요',
+    description: '반짝반짝, 공주 이야기 같은 동요',
+    prompt: 'Create the identity of a princess fairytale children\'s nursery rhyme that extends from the provided reference audio. Style: bright princess story-song for preschool children. Mood: sparkling, graceful, warm, magical, and encouraging. Key: major key. Features: simple singable melody, gentle fairytale movement, memorable repeated chorus, safe and playful routine-coaching energy. Instrumentation: piano, glockenspiel, soft strings, harp-like plucks, light percussion. The song should keep the princess-like sparkle while clearly supporting the child\'s routine habit.',
+    instrument: 'piano, glockenspiel, soft strings, harp-like plucks, and light percussion',
+    mood: 'sparkling, graceful, warm, magical, and encouraging',
+    rhythm: 'gentle fairytale rhythm with a clear repeated chorus'
   }
 ];
 

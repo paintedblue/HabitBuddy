@@ -1,8 +1,10 @@
 import react from '@vitejs/plugin-react';
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  envDir: resolve(__dirname, '../..'),
   plugins: [
     react(),
     VitePWA({
@@ -24,8 +26,8 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,glb,fbx,woff2}'],
-        maximumFileSizeToCacheInBytes: 90 * 1024 * 1024
+        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
       }
     })
   ],

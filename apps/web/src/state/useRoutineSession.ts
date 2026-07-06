@@ -1,10 +1,27 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { habitTemplates, renderPersonalizedLyrics, type ChildProfile, type HabitTemplate, type RoutineEventType, type RoutineSession } from '@habit-buddy/shared';
 import { playCueSound, playRewardSound, startRoutineLoop, stopRoutineLoop } from '../audio/toneFactory';
 import { habitBuddyDb, type LocalGeneratedSong } from '../storage/db';
 
 export type RoutineStatus = 'home' | 'cue' | 'routine' | 'awaiting_parent' | 'reward';
-export type CharacterMood = 'idle' | 'appear' | 'walk' | 'wave' | 'brush' | 'wash' | 'eat' | 'mop' | 'celebrate' | 'reward';
+export type CharacterMood =
+  | 'idle'
+  | 'appear'
+  | 'walk'
+  | 'wave'
+  | 'reach_forward'
+  | 'look_around'
+  | 'point'
+  | 'thumbs_up'
+  | 'stretch'
+  | 'yawn'
+  | 'mouth_open_wide'
+  | 'brush'
+  | 'wash'
+  | 'eat'
+  | 'mop'
+  | 'celebrate'
+  | 'reward';
 
 function event(type: RoutineEventType) {
   return { id: `event-${Date.now()}-${type}`, type, at: new Date().toISOString() };
@@ -22,7 +39,7 @@ function routineMoodForHabit(habit: HabitTemplate): CharacterMood {
   if (habit.id === 'brush') return 'brush';
   if (habit.id === 'wash') return 'wash';
   if (habit.id === 'veggie') return 'eat';
-  if (habit.id === 'tidy') return 'mop';
+  if (habit.id === 'tidy' || habit.id === 'clothes') return 'mop';
   return 'celebrate';
 }
 
@@ -36,6 +53,8 @@ export function useRoutineSession(profile: ChildProfile, parentPinLast4: string)
   const [characterMood, setCharacterMood] = useState<CharacterMood>('idle');
   const [stage, setStage] = useState<'main' | 'bathroom'>('main');
   const [feedback, setFeedback] = useState('');
+  const routineAudio = useRef<HTMLAudioElement | null>(null);
+  const activeSessionRef = useRef<RoutineSession | null>(null);
 
   const lyrics = useMemo(() => {
     const fallback = renderPersonalizedLyrics(profile, selectedHabit);
@@ -57,12 +76,17 @@ export function useRoutineSession(profile: ChildProfile, parentPinLast4: string)
   useEffect(() => {
     if (status === 'routine' && secondsLeft === 0 && activeSession) {
       stopRoutineLoop();
+      stopRoutineAudio();
       setPaused(true);
       setStatus('awaiting_parent');
       setFeedback('');
       setCharacterMood('wave');
     }
   }, [activeSession, secondsLeft, status]);
+
+  useEffect(() => {
+    activeSessionRef.current = activeSession;
+  }, [activeSession]);
 
   async function startHabit(habit: HabitTemplate, song?: LocalGeneratedSong) {
     stopRoutineLoop();
@@ -84,25 +108,30 @@ export function useRoutineSession(profile: ChildProfile, parentPinLast4: string)
       stars: 0,
       events: [event('session_started'), event('cue_started')]
     };
+    activeSessionRef.current = session;
     setActiveSession(session);
   }
 
-  async function beginRoutine(habit = selectedHabit, session = activeSession) {
-    if (!session) return;
-    const routineSession = appendEvent(appendEvent({ ...session, phase: 'routine', habitId: habit.id }, 'cue_completed'), 'routine_started');
+  async function beginRoutine(habit = selectedHabit, session = activeSessionRef.current) {
+    const currentSession = session ?? activeSessionRef.current;
+    if (!currentSession) return;
+    const routineSession = appendEvent(appendEvent({ ...currentSession, phase: 'routine', habitId: habit.id }, 'cue_completed'), 'routine_started');
+    activeSessionRef.current = routineSession;
     setActiveSession(routineSession);
     setStatus('routine');
     setStage(isBathroomHabit(habit) ? 'bathroom' : 'main');
     setSecondsLeft(habit.durationSeconds);
     setPaused(false);
     setCharacterMood(routineMoodForHabit(habit));
-    await startRoutineLoop();
+    const audioStarted = await startSongAudio(selectedSong);
+    if (!audioStarted) await startRoutineLoop();
   }
 
   function pause() {
     if (!activeSession || status !== 'routine') return;
     setPaused(true);
     stopRoutineLoop();
+    routineAudio.current?.pause();
     setActiveSession(appendEvent(activeSession, 'routine_paused'));
   }
 
@@ -110,7 +139,11 @@ export function useRoutineSession(profile: ChildProfile, parentPinLast4: string)
     if (!activeSession || status !== 'routine') return;
     setPaused(false);
     setActiveSession(appendEvent(activeSession, 'routine_resumed'));
-    await startRoutineLoop();
+    if (routineAudio.current) {
+      await routineAudio.current.play().catch(() => undefined);
+    } else {
+      await startRoutineLoop();
+    }
   }
 
   async function resumeExtra() {
@@ -120,7 +153,8 @@ export function useRoutineSession(profile: ChildProfile, parentPinLast4: string)
     setSecondsLeft(30);
     setCharacterMood(routineMoodForHabit(selectedHabit));
     setActiveSession(appendEvent({ ...activeSession, phase: 'routine' }, 'routine_resumed'));
-    await startRoutineLoop();
+    const audioStarted = await startSongAudio(selectedSong);
+    if (!audioStarted) await startRoutineLoop();
   }
 
   async function confirmParentPassword(value: string) {
@@ -141,6 +175,7 @@ export function useRoutineSession(profile: ChildProfile, parentPinLast4: string)
     setCharacterMood('reward');
     setFeedback('');
     stopRoutineLoop();
+    stopRoutineAudio();
     playRewardSound();
     await habitBuddyDb.saveRoutineSession(completed);
     return true;
@@ -153,8 +188,18 @@ export function useRoutineSession(profile: ChildProfile, parentPinLast4: string)
     void habitBuddyDb.saveRoutineSession(viewed);
   }
 
+  function recordEvent(type: RoutineEventType) {
+    const session = activeSessionRef.current;
+    if (!session) return;
+    const next = appendEvent(session, type);
+    activeSessionRef.current = next;
+    setActiveSession(next);
+  }
+
   function returnHome() {
     stopRoutineLoop();
+    stopRoutineAudio();
+    activeSessionRef.current = null;
     setActiveSession(null);
     setStatus('home');
     setPaused(false);
@@ -163,6 +208,27 @@ export function useRoutineSession(profile: ChildProfile, parentPinLast4: string)
     setCharacterMood('idle');
     setFeedback('');
     setSelectedSong(null);
+  }
+
+  function stopRoutineAudio() {
+    if (!routineAudio.current) return;
+    routineAudio.current.pause();
+    routineAudio.current = null;
+  }
+
+  async function startSongAudio(song: LocalGeneratedSong | null) {
+    const url = song?.streamAudioUrl ?? song?.audioUrl;
+    if (!url) return false;
+    stopRoutineAudio();
+    try {
+      const audio = new Audio(url);
+      routineAudio.current = audio;
+      await audio.play();
+      return true;
+    } catch {
+      stopRoutineAudio();
+      return false;
+    }
   }
 
   return {
@@ -182,6 +248,7 @@ export function useRoutineSession(profile: ChildProfile, parentPinLast4: string)
     pause,
     resume,
     resumeExtra,
+    recordEvent,
     confirmParentPassword,
     markRewardViewed,
     returnHome

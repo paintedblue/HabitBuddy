@@ -3,7 +3,7 @@ import type { ChildProfile } from '@habit-buddy/shared';
 export const defaultProfile: ChildProfile = {
   id: 'local-child',
   name: '',
-  hardHabit: '양치하기',
+  hardHabit: '양치',
   habitBarrier: '귀찮아요',
   dreamIdentity: '우주비행사',
   dreamIdentityCustom: '',
@@ -17,12 +17,11 @@ export const defaultProfile: ChildProfile = {
 };
 
 export const habitBarrierChoices: Record<string, string[]> = {
-  '양치하기': ['맛이 싫어요', '귀찮아요', '입에 넣는 느낌이 싫어요'],
-  '손 씻기': ['물이 차가워요', '비누 느낌이 싫어요', '빨리 놀고 싶어요'],
-  '방 정리하기': ['어디에 둘지 몰라요', '귀찮아요', '너무 많아요'],
-  '일찍자기': ['어두운 게 무서워요', '더 놀고 싶어요', '잠이 안 와요'],
-  '채소먹기': ['맛이 낯설어요', '씹기 힘들어요', '먹기 싫어요'],
-  '책 읽기': ['글자가 어려워요', '가만히 있기 힘들어요', '다른 걸 하고 싶어요']
+  '양치': ['맛이 싫어요', '귀찮아요', '입에 넣는 느낌이 싫어요'],
+  '손씻기': ['물이 차가워요', '비누 느낌이 싫어요', '빨리 놀고 싶어요'],
+  '정리정돈': ['어디에 둘지 몰라요', '귀찮아요', '너무 많아요'],
+  '옷 정리하기': ['접는 게 어려워요', '어디에 둘지 몰라요', '귀찮아요'],
+  '채소 먹기': ['맛이 낯설어요', '씹기 힘들어요', '먹기 싫어요']
 };
 
 export const identityChoices = [

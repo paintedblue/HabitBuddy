@@ -34,23 +34,47 @@ create table custom_habits (
 );
 
 create table song_generation_requests (
-  id uuid primary key,
-  child_id uuid references child_profiles(id),
+  id text primary key,
+  child_id text not null,
   habit_id text not null,
   prompt text not null,
+  inputs jsonb,
+  provider text,
+  external_task_id text,
+  error_code text,
+  error_message text,
   status text not null,
   created_at timestamptz not null default now()
 );
 
 create table generated_songs (
-  id uuid primary key,
-  request_id uuid references song_generation_requests(id),
+  id text primary key,
+  request_id text references song_generation_requests(id),
   title text not null,
   lyrics text not null,
   audio_url text,
+  stream_audio_url text,
+  source_audio_url text,
+  image_url text,
+  external_song_id text,
+  provider text,
+  target_duration_seconds integer,
+  duration_seconds integer,
+  model_name text,
+  melody_preset_id text,
+  rhythm_preset_id text,
+  instrument_preset_id text,
+  generation_mode text,
+  reference_audio_url text,
+  reference_audio_file_name text,
+  reference_audio_duration_seconds integer,
+  suno_continue_at_seconds integer,
   status text not null,
   created_at timestamptz not null default now()
 );
+
+create index song_generation_requests_external_task_id_idx
+  on song_generation_requests(external_task_id);
 
 create table habit_sessions (
   id uuid primary key,

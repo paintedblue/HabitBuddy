@@ -20,22 +20,11 @@
       "props": ["broccoli"],
       "rootScale": 0.01,
       "sizeMB": 25.1
-    },
-    {
-      "id": "rabbit",
-      "displayName": "Rabbit",
-      "file": "rabbit/rabbit_eating_vegetable_v1.glb",
-      "skeleton": "mixamorig-41",
-      "skeletonNote": "Standard Mixamo rig ('mixamorig:' prefix); 41 bones including fingers. Recommended target rig for new characters.",
-      "clips": ["eat_vegetable", "broccoli"],
-      "props": ["broccoli"],
-      "rootScale": 0.01,
-      "sizeMB": 21.1
     }
   ],
   "other": [
     {
-      "file": "fox_brushing_teeth_v4.glb",
+      "file": "final_squirrel_brushing_teeth.glb",
       "motion": "brushing_teeth",
       "note": "Pre-existing export at the public root (apps/web/public/assets/characters/). The squirrel character; kept at root to avoid breaking its existing import path."
     }
