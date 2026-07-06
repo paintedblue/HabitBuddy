@@ -1,0 +1,47 @@
+substitutions:
+  _REGION: asia-northeast3
+  _SERVICE_NAME: habit-buddy-api
+  _ARTIFACT_REPOSITORY: habit-buddy
+  _CLOUD_SQL_INSTANCE: ""
+  _VPC_CONNECTOR: habit-buddy-connector
+  _PUBLIC_API_BASE_URL: ""
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - apps/api/Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID
+      - .
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE_NAME}
+      - --image
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID
+      - --region
+      - ${_REGION}
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --port
+      - "3000"
+      - --set-env-vars
+      - NODE_ENV=production,OPENAI_MODEL=gpt-5-mini,SUNO_API_BASE_URL=https://api.sunoapi.org,SUNO_MODEL=V5,PUBLIC_API_BASE_URL=${_PUBLIC_API_BASE_URL},SUNO_CALLBACK_URL=${_PUBLIC_API_BASE_URL}/songs/callbacks/suno
+      - --update-secrets
+      - OPENAI_API_KEY=OPENAI_API_KEY:latest,SUNO_API_KEY=SUNO_API_KEY:latest,DATABASE_URL=DATABASE_URL:latest,REDIS_URL=REDIS_URL:latest
+      - --add-cloudsql-instances
+      - ${_CLOUD_SQL_INSTANCE}
+      - --vpc-connector
+      - ${_VPC_CONNECTOR}
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID

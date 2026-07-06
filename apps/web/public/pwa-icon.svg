@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="HabitBuddy">
+  <rect width="192" height="192" rx="44" fill="#fff3d8"/>
+  <circle cx="96" cy="100" r="58" fill="#7ccf44"/>
+  <circle cx="76" cy="86" r="9" fill="#263238"/>
+  <circle cx="116" cy="86" r="9" fill="#263238"/>
+  <path d="M72 119c14 16 34 16 48 0" fill="none" stroke="#263238" stroke-width="10" stroke-linecap="round"/>
+  <path d="M96 35c11 0 24 8 31 20-19 0-35-5-44-16 4-3 8-4 13-4z" fill="#43b95b"/>
+</svg>

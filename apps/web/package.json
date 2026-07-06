@@ -1,0 +1,41 @@
+{
+  "name": "@habit-buddy/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "android:add": "cap add android",
+    "android:sync": "npm run build && node scripts/prune-android-assets.mjs && cap sync android",
+    "android:build": "npm run android:sync && cd android && GRADLE_USER_HOME=../.gradle ./gradlew clean assembleDebug",
+    "android:diagnose:api": "node scripts/diagnose-android-api.mjs",
+    "android:install": "npm run android:build && npm run android:diagnose:api && node scripts/install-android.mjs",
+    "android:run": "cap run android",
+    "preview": "vite preview --host 0.0.0.0",
+    "qa:assets": "node scripts/verify-product-assets.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1",
+    "@habit-buddy/shared": "*",
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.0.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "three": "^0.178.0",
+    "vite-plugin-pwa": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.10",
+    "@types/react-dom": "19.0.3",
+    "@types/three": "^0.178.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.3.3",
+    "vitest": "^4.1.9"
+  }
+}
