@@ -28,8 +28,9 @@ function createRepositoryMock() {
 describe('SongsService', () => {
   it('creates a queued request and approves generated songs', async () => {
     const repository = createRepositoryMock();
-    const service = new SongsService({ add: vi.fn() } as never, repository as never);
-    const request = await service.createRequest({ childId: 'c1', habitId: 'brush', prompt: '토리와 양치' });
+    const audioStorage = { persistGeneratedAudio: vi.fn() };
+    const service = new SongsService({ add: vi.fn() } as never, repository as never, { uploadAndExtend: vi.fn() } as never, audioStorage as never);
+    const request = await service.enqueueRequest({ childId: 'c1', habitId: 'brush', prompt: '토리와 양치' });
     const song = await service.completeGeneration(request.id, '노래');
     expect(request.status).toBe('pending_approval');
     await expect(service.listPending()).resolves.toHaveLength(1);
@@ -38,8 +39,9 @@ describe('SongsService', () => {
 
   it('tracks Suno task state and stores completed audio metadata', async () => {
     const repository = createRepositoryMock();
-    const service = new SongsService({ add: vi.fn() } as never, repository as never);
-    const request = await service.createRequest({
+    const audioStorage = { persistGeneratedAudio: vi.fn().mockResolvedValue('https://storage.googleapis.com/habit-audio/generated-songs/req/clip-1.mp3') };
+    const service = new SongsService({ add: vi.fn() } as never, repository as never, { uploadAndExtend: vi.fn() } as never, audioStorage as never);
+    const request = await service.enqueueRequest({
       childId: 'c1',
       habitId: 'brush',
       prompt: '노래 가사',
@@ -63,18 +65,54 @@ describe('SongsService', () => {
 
     await expect(service.getRequest(request.id)).resolves.toMatchObject({ status: 'approved' });
     expect(song.provider).toBe('sunoapi');
-    expect(song.audioUrl).toBe('https://example.com/song.mp3');
+    expect(song.audioUrl).toBe('https://storage.googleapis.com/habit-audio/generated-songs/req/clip-1.mp3');
+    expect(song.sourceAudioUrl).toBe('https://example.com/song.mp3');
+    expect(audioStorage.persistGeneratedAudio).toHaveBeenCalledWith(expect.objectContaining({
+      requestId: request.id,
+      externalSongId: 'clip-1',
+      sourceUrls: [undefined, 'https://example.com/song.mp3', 'https://example.com/stream']
+    }));
     expect(song.durationSeconds).toBe(42);
     expect(song.melodyPresetId).toBe('energetic');
   });
 
   it('marks requests as failed with an error code', async () => {
     const repository = createRepositoryMock();
-    const service = new SongsService({ add: vi.fn() } as never, repository as never);
-    const request = await service.createRequest({ childId: 'c1', habitId: 'brush', prompt: '토리와 양치' });
+    const audioStorage = { persistGeneratedAudio: vi.fn() };
+    const service = new SongsService({ add: vi.fn() } as never, repository as never, { uploadAndExtend: vi.fn() } as never, audioStorage as never);
+    const request = await service.enqueueRequest({ childId: 'c1', habitId: 'brush', prompt: '토리와 양치' });
     await expect(service.failRequest(request.id, 'missing_reference_audio', 'Reference audio is required')).resolves.toMatchObject({
       status: 'failed',
       errorCode: 'missing_reference_audio'
     });
+  });
+
+  it('starts Suno upload-extend immediately when creating a request', async () => {
+    const repository = createRepositoryMock();
+    const suno = { uploadAndExtend: vi.fn().mockResolvedValue({ taskId: 'task-now' }) };
+    const audioStorage = { persistGeneratedAudio: vi.fn() };
+    const service = new SongsService({ add: vi.fn() } as never, repository as never, suno as never, audioStorage as never);
+
+    await expect(service.createRequest({
+      childId: 'c1',
+      habitId: 'brush',
+      prompt: '노래 가사',
+      inputs: {
+        childName: '토리',
+        dislikedHabit: '양치',
+        referenceAudioUrl: 'https://example.com/reference.mp3',
+        melodyPresetId: 'princess',
+        generationMode: 'reference_audio',
+        sunoContinueAtSeconds: 20
+      }
+    })).resolves.toMatchObject({
+      status: 'generating',
+      externalTaskId: 'task-now'
+    });
+    expect(suno.uploadAndExtend).toHaveBeenCalledWith(expect.objectContaining({
+      uploadUrl: 'https://example.com/reference.mp3',
+      prompt: '노래 가사',
+      continueAt: 5
+    }));
   });
 });

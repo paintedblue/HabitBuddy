@@ -18,7 +18,7 @@ export const habitAnimationExpectations: Record<HabitId, {
 const lyricSectionPattern = /^\[(?:verse|chorus|outro|bridge|intro|pre-chorus|post-chorus)[^\]]*\]$/i;
 
 export function canStartSong(song: LocalGeneratedSong) {
-  return song.status === 'approved';
+  return song.status === 'approved' && !!song.audioUrl;
 }
 
 export function songStatusLabel(song: LocalGeneratedSong) {

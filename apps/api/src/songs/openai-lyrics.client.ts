@@ -35,6 +35,7 @@ const habitNameById: Record<HabitId, string> = {
   clothes: '옷 정리하기',
   veggie: '채소 먹기'
 };
+const openAiLyricsTimeoutMs = 45000;
 
 @Injectable()
 export class OpenAiLyricsClient {
@@ -47,7 +48,7 @@ export class OpenAiLyricsClient {
     let lastSafetyFailure = '';
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const response = await this.openai().responses.create({
+      const response = await this.withTimeout(this.openai().responses.create({
         model: this.model,
         input: [
           {
@@ -80,7 +81,7 @@ export class OpenAiLyricsClient {
             }
           }
         }
-      });
+      }), openAiLyricsTimeoutMs);
 
       const draft = this.parseDraft(response.output_text);
       const safety = deterministicChecks(draft.lyrics, clean);
@@ -154,6 +155,20 @@ export class OpenAiLyricsClient {
       return { title: parsed.title.trim(), lyrics: parsed.lyrics.trim() };
     } catch {
       throw new OpenAiLyricsError('invalid_openai_response', 'OpenAI returned lyrics in an invalid format');
+    }
+  }
+
+  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+    let timeout: NodeJS.Timeout | undefined;
+    const timeoutPromise = new Promise<never>((_resolve, reject) => {
+      timeout = setTimeout(() => {
+        reject(new OpenAiLyricsError('openai_timeout', 'OpenAI lyrics generation timed out'));
+      }, timeoutMs);
+    });
+    try {
+      return await Promise.race([promise, timeoutPromise]);
+    } finally {
+      if (timeout) clearTimeout(timeout);
     }
   }
 }

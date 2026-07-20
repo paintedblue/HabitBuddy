@@ -9,6 +9,7 @@ import { SongsProcessor } from '../src/songs/songs.processor.js';
 import { SongsRepository } from '../src/songs/songs.repository.js';
 import { SunoApiClient } from '../src/songs/suno-api.client.js';
 import { OpenAiLyricsClient } from '../src/songs/openai-lyrics.client.js';
+import { AudioStorageService } from '../src/songs/audio-storage.service.js';
 
 function createRepositoryFake() {
   const requests = new Map<string, SongGenerationRequest>();
@@ -37,7 +38,8 @@ async function compileSongTestModule(
   repository: ReturnType<typeof createRepositoryFake>,
   queue: { add: ReturnType<typeof vi.fn> },
   suno: { uploadAndExtend: ReturnType<typeof vi.fn>; getRecordInfo: ReturnType<typeof vi.fn> },
-  openAiLyrics: { generate: ReturnType<typeof vi.fn> }
+  openAiLyrics: { generate: ReturnType<typeof vi.fn> },
+  audioStorage: { persistGeneratedAudio: ReturnType<typeof vi.fn> }
 ) {
   return Test.createTestingModule({
     providers: [
@@ -48,8 +50,8 @@ async function compileSongTestModule(
       },
       {
         provide: SongsService,
-        useFactory: (songQueue: typeof queue, songsRepository: typeof repository) => new SongsService(songQueue as never, songsRepository as never),
-        inject: [getQueueToken('song-generation'), SongsRepository]
+        useFactory: (songQueue: typeof queue, songsRepository: typeof repository, sunoClient: typeof suno, audioStorageService: typeof audioStorage) => new SongsService(songQueue as never, songsRepository as never, sunoClient as never, audioStorageService as never),
+        inject: [getQueueToken('song-generation'), SongsRepository, SunoApiClient, AudioStorageService]
       },
       {
         provide: SongsProcessor,
@@ -59,7 +61,8 @@ async function compileSongTestModule(
       { provide: getQueueToken('song-generation'), useValue: queue },
       { provide: SongsRepository, useValue: repository },
       { provide: SunoApiClient, useValue: suno },
-      { provide: OpenAiLyricsClient, useValue: openAiLyrics }
+      { provide: OpenAiLyricsClient, useValue: openAiLyrics },
+      { provide: AudioStorageService, useValue: audioStorage }
     ]
   }).compile();
 }
@@ -77,15 +80,20 @@ describe('song generation pipeline e2e', () => {
     uploadAndExtend: vi.fn(),
     getRecordInfo: vi.fn()
   };
+  const audioStorage = {
+    persistGeneratedAudio: vi.fn()
+  };
 
   beforeEach(async () => {
     queue.add.mockReset();
     openAiLyrics.generate.mockReset();
     suno.uploadAndExtend.mockReset();
     suno.getRecordInfo.mockReset();
+    audioStorage.persistGeneratedAudio.mockReset();
+    audioStorage.persistGeneratedAudio.mockResolvedValue('https://storage.googleapis.com/habit-buddy-audio/generated-songs/req/clip.mp3');
     repository = createRepositoryFake();
 
-    moduleRef = await compileSongTestModule(repository, queue, suno, openAiLyrics);
+    moduleRef = await compileSongTestModule(repository, queue, suno, openAiLyrics, audioStorage);
     controller = moduleRef.get(SongsController);
     processor = moduleRef.get(SongsProcessor);
   });
@@ -148,22 +156,17 @@ describe('song generation pipeline e2e', () => {
 
     const created = await controller.create({ childId: 'child-1', habitId: 'brush', prompt: lyrics, inputs });
     expect(created.prompt).toBe(lyrics);
-    expect(queue.add).toHaveBeenCalledWith('generate-song', expect.objectContaining({
-      id: created.id,
-      prompt: lyrics,
-      inputs: expect.objectContaining({
-        referenceAudioUrl: 'https://example.com/reference-melodies/princess_bgm_cut.mp3',
-        sunoContinueAtSeconds: 20
-      })
-    }));
-
-    await processor.process({ data: created } as never);
     expect(suno.uploadAndExtend).toHaveBeenCalledWith(expect.objectContaining({
       uploadUrl: 'https://example.com/reference-melodies/princess_bgm_cut.mp3',
       prompt: lyrics,
-      continueAt: 20
+      continueAt: 5
     }));
     expect(suno.uploadAndExtend.mock.calls[0][0].style).toContain('princess fairytale');
+    expect(queue.add).not.toHaveBeenCalled();
+    expect(created).toMatchObject({
+      externalTaskId: 'task-princess-1',
+      status: 'generating'
+    });
 
     await expect(controller.sunoCallback({
         code: 200,
@@ -186,10 +189,14 @@ describe('song generation pipeline e2e', () => {
       requestId: created.id,
       title: '토리의 양치 공주 동요',
       lyrics,
-      audioUrl: 'https://example.com/audio.mp3',
+      audioUrl: 'https://storage.googleapis.com/habit-buddy-audio/generated-songs/req/clip.mp3',
       streamAudioUrl: 'https://example.com/stream.mp3',
       status: 'approved'
     });
+    expect(audioStorage.persistGeneratedAudio).toHaveBeenCalledWith(expect.objectContaining({
+      externalSongId: 'clip-1',
+      sourceUrls: [undefined, 'https://example.com/audio.mp3', 'https://example.com/stream.mp3']
+    }));
   });
 
   it('recovers an in-flight Suno request after an API module restart using persisted request state', async () => {
@@ -211,7 +218,6 @@ describe('song generation pipeline e2e', () => {
     suno.uploadAndExtend.mockResolvedValue({ taskId: 'task-after-restart' });
 
     const created = await controller.create({ childId: 'child-1', habitId: 'brush', prompt: lyrics, inputs });
-    await processor.process({ data: created } as never);
     await expect(controller.request(created.id)).resolves.toMatchObject({
       id: created.id,
       externalTaskId: 'task-after-restart',
@@ -219,7 +225,7 @@ describe('song generation pipeline e2e', () => {
     });
 
     await moduleRef.close();
-    moduleRef = await compileSongTestModule(repository, queue, suno, openAiLyrics);
+    moduleRef = await compileSongTestModule(repository, queue, suno, openAiLyrics, audioStorage);
     controller = moduleRef.get(SongsController);
     suno.getRecordInfo.mockResolvedValue({
       status: 'SUCCESS',
@@ -239,7 +245,7 @@ describe('song generation pipeline e2e', () => {
     await expect(controller.sync(created.id)).resolves.toMatchObject({
       requestId: created.id,
       externalSongId: 'clip-after-restart',
-      audioUrl: 'https://example.com/audio-after-restart.mp3',
+      audioUrl: 'https://storage.googleapis.com/habit-buddy-audio/generated-songs/req/clip.mp3',
       streamAudioUrl: 'https://example.com/stream-after-restart.mp3',
       status: 'approved'
     });

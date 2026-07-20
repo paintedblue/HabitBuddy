@@ -77,7 +77,11 @@ export function createQueuedSunoSong(profile: ChildProfile, preview: SongPreview
     referenceAudioDurationSeconds: request.inputs?.referenceAudioDurationSeconds,
     errorCode: request.errorCode,
     errorMessage: request.errorMessage,
-    status: request.status === 'generating' ? 'generating' : 'queued',
+    status: request.status === 'failed'
+      ? 'failed'
+      : request.status === 'generating'
+        ? 'generating'
+        : 'queued',
     createdAt: now,
     inputs: localSongInputs(profile)
   };

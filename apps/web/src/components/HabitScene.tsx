@@ -1,11 +1,17 @@
 import { Environment, useTexture } from '@react-three/drei';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Component, Suspense, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { CharacterMood } from '../state/useRoutineSession';
+
+const characterAssetBaseUrl = (import.meta.env.VITE_CHARACTER_ASSET_BASE_URL ?? '').replace(/\/$/, '');
+
+function characterAssetUrl(path: string) {
+  return characterAssetBaseUrl ? `${characterAssetBaseUrl}/${path}` : `/assets/characters/${path}`;
+}
 
 interface HabitSceneProps {
   stage: 'main' | 'bathroom';
@@ -16,24 +22,51 @@ interface HabitSceneProps {
 }
 
 const characterFiles: Record<CharacterMood, { url: string; type: 'fbx' | 'glb' }> = {
-  idle: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
-  appear: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
-  walk: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
-  wave: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
-  reach_forward: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
-  look_around: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
-  point: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
-  thumbs_up: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
-  stretch: { url: '/assets/characters/Waving.fbx', type: 'fbx' },
-  yawn: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
-  mouth_open_wide: { url: '/assets/characters/FoxStopped.fbx', type: 'fbx' },
-  brush: { url: '/assets/characters/final_squirrel_brushing_teeth.glb', type: 'glb' },
-  wash: { url: '/assets/characters/movement/fox_washing_hands.glb', type: 'glb' },
-  eat: { url: '/assets/characters/squirrel/squirrel_eat_chew_v1.glb', type: 'glb' },
-  mop: { url: '/assets/characters/char1_mopping_loop_fixed.fbx', type: 'fbx' },
-  celebrate: { url: '/assets/characters/RumbaDancing.fbx', type: 'fbx' },
-  reward: { url: '/assets/characters/RumbaDancing.fbx', type: 'fbx' }
+  idle: { url: characterAssetUrl('FoxStopped.fbx'), type: 'fbx' },
+  appear: { url: characterAssetUrl('FoxStopped.fbx'), type: 'fbx' },
+  walk: { url: characterAssetUrl('Waving.fbx'), type: 'fbx' },
+  wave: { url: characterAssetUrl('Waving.fbx'), type: 'fbx' },
+  reach_forward: { url: characterAssetUrl('FoxStopped.fbx'), type: 'fbx' },
+  look_around: { url: characterAssetUrl('FoxStopped.fbx'), type: 'fbx' },
+  point: { url: characterAssetUrl('FoxStopped.fbx'), type: 'fbx' },
+  thumbs_up: { url: characterAssetUrl('Waving.fbx'), type: 'fbx' },
+  stretch: { url: characterAssetUrl('Waving.fbx'), type: 'fbx' },
+  yawn: { url: characterAssetUrl('FoxStopped.fbx'), type: 'fbx' },
+  mouth_open_wide: { url: characterAssetUrl('FoxStopped.fbx'), type: 'fbx' },
+  brush_prep: { url: characterAssetUrl('fox_brushing_teeth_v4_prep_anims.glb'), type: 'glb' },
+  brush: { url: characterAssetUrl('final_squirrel_brushing_teeth.glb'), type: 'glb' },
+  wash: { url: characterAssetUrl('movement/fox_washing_hands.glb'), type: 'glb' },
+  eat: { url: characterAssetUrl('squirrel/squirrel_eat_chew_v1.glb'), type: 'glb' },
+  mop: { url: characterAssetUrl('char1_mopping_loop_fixed.fbx'), type: 'fbx' },
+  celebrate: { url: characterAssetUrl('RumbaDancing.fbx'), type: 'fbx' },
+  reward: { url: characterAssetUrl('RumbaDancing.fbx'), type: 'fbx' }
 };
+const brushPrepFallbackFile = { url: characterAssetUrl('fox_brushing_teeth_v4.glb'), type: 'glb' as const };
+
+class CharacterModelBoundary extends Component<
+  { children: ReactNode; resetKey: string },
+  { hasError: boolean; resetKey: string }
+> {
+  state = { hasError: false, resetKey: this.props.resetKey };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  static getDerivedStateFromProps(props: { resetKey: string }, state: { hasError: boolean; resetKey: string }) {
+    if (props.resetKey !== state.resetKey) return { hasError: false, resetKey: props.resetKey };
+    return null;
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.warn('Character model failed to render.', error, info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
 
 export function HabitScene({ stage, mood, drawerOpen, rewardPulse, variant = 'full' }: HabitSceneProps) {
   return (
@@ -42,7 +75,9 @@ export function HabitScene({ stage, mood, drawerOpen, rewardPulse, variant = 'fu
         <RoomBackground stage={stage} />
         <ambientLight intensity={0.62} />
         <directionalLight position={[2, 5, 5]} intensity={stage === 'bathroom' ? 1.15 : 1} />
-        <CharacterModel stage={stage} mood={mood} drawerOpen={drawerOpen} variant={variant} />
+        <CharacterModelBoundary resetKey={`${stage}-${mood}`}>
+          <CharacterModel stage={stage} mood={mood} drawerOpen={drawerOpen} variant={variant} />
+        </CharacterModelBoundary>
         {rewardPulse ? <RewardConfetti /> : null}
         <Environment preset="apartment" environmentIntensity={0.4} />
       </Suspense>
@@ -64,9 +99,9 @@ function RoomBackground({ stage }: { stage: 'main' | 'bathroom' }) {
 }
 
 function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 'bathroom'; mood: CharacterMood; drawerOpen: boolean; variant: 'full' | 'home' | 'routine' }) {
-  const characterFile = characterFiles[mood];
+  const characterFile = useCharacterFile(mood);
   const source = useLoader(characterFile.type === 'glb' ? GLTFLoader : FBXLoader, characterFile.url);
-  const texture = useTexture('/assets/characters/texture_0.png');
+  const texture = useTexture(characterAssetUrl('texture_0.png'));
   const sourceModel = 'scene' in source ? source.scene : source;
   const animations = source.animations;
   const model = useMemo(() => clone(sourceModel) as THREE.Group, [sourceModel]);
@@ -78,7 +113,8 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
   const base = stage === 'bathroom'
     ? { position: new THREE.Vector3(-0.65, -2.35, 0), scale: 0.000195, rotationY: 0 }
     : { position: new THREE.Vector3(0, -2, 0), scale: 0.00016875, rotationY: 0 };
-  const modelSettings = mood === 'brush'
+  const isGlbRoutineAnimation = mood === 'brush_prep' || mood === 'brush' || mood === 'wash' || mood === 'eat';
+  const modelSettings = mood === 'brush_prep' || mood === 'brush'
     ? { position: new THREE.Vector3(-0.65, -2.35, 0), scale: 1.95, rotationY: 0 }
     : mood === 'wash'
       ? { position: new THREE.Vector3(-0.65, -2.35, 0), scale: 1.95, rotationY: 0 }
@@ -134,8 +170,9 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
       ? animations.find((item) => item.name.toLowerCase() === 'scene' && item.tracks.length > 0)
       : mood === 'wash'
         ? animations.find((item) => item.name.toLowerCase() === 'handwash' && item.tracks.length > 0)
-      : mood === 'brush'
+      : mood === 'brush_prep' || mood === 'brush'
           ? animations.find((item) => item.name.toLowerCase().includes('brushing') && item.tracks.length > 0)
+            ?? animations.find((item) => item.name.toLowerCase().includes('brush') && item.tracks.length > 0)
             ?? animations.find((item) => item.tracks.length > 0)
           : mood === 'eat'
             ? animations.find((item) => item.name.toLowerCase().includes('eat') && item.tracks.length > 0)
@@ -148,7 +185,7 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
       action.reset();
       action.setLoop(THREE.LoopRepeat, Number.POSITIVE_INFINITY);
       action.clampWhenFinished = false;
-      action.timeScale = mood === 'walk' ? 0.85 : mood === 'brush' ? 1.05 : 1;
+      action.timeScale = mood === 'walk' ? 0.85 : mood === 'brush_prep' || mood === 'brush' ? 1.05 : 1;
       action.play();
     });
 
@@ -169,7 +206,7 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
     if (!group.current) return;
     const t = clock.getElapsedTime();
     const drawerShift = drawerOpen ? -1.35 : 0;
-    const activeBounce = variant === 'home' || mood === 'brush' || mood === 'wash' || mood === 'eat' || mood === 'mop'
+    const activeBounce = variant === 'home' || isGlbRoutineAnimation || mood === 'mop'
       ? 0
       : Math.abs(Math.sin(t * 7.4)) * (mood === 'reward' ? 0.2 : 0.1);
     const sway = mood === 'celebrate' || mood === 'reward'
@@ -187,11 +224,11 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
     group.current.rotation.set(0, modelSettings.rotationY + spin, 0);
     group.current.scale.setScalar(modelSettings.scale * variantScale);
 
-    if (mood !== 'idle' && mood !== 'appear' && mood !== 'brush' && mood !== 'wash' && mood !== 'eat' && mood !== 'mop') {
+    if (mood !== 'idle' && mood !== 'appear' && !isGlbRoutineAnimation && mood !== 'mop') {
       animateRigPart(rightArm.current, mood, t, 'right');
       animateRigPart(leftArm.current, mood, t, 'left');
     }
-    if (head.current && mood !== 'idle' && mood !== 'appear' && mood !== 'brush' && mood !== 'wash' && mood !== 'eat' && mood !== 'mop') {
+    if (head.current && mood !== 'idle' && mood !== 'appear' && !isGlbRoutineAnimation && mood !== 'mop') {
       head.current.rotation.x += Math.sin(t * 2.2) * 0.025;
       head.current.rotation.z += Math.sin(t * 1.7) * 0.02;
     }
@@ -202,6 +239,35 @@ function CharacterModel({ stage, mood, drawerOpen, variant }: { stage: 'main' | 
       <primitive object={model} />
     </group>
   );
+}
+
+function useCharacterFile(mood: CharacterMood) {
+  const primary = characterFiles[mood];
+  const initial = mood === 'brush_prep' ? brushPrepFallbackFile : primary;
+  const [resolved, setResolved] = useState(initial);
+
+  useEffect(() => {
+    if (mood !== 'brush_prep') {
+      setResolved(primary);
+      return;
+    }
+
+    let cancelled = false;
+    setResolved(brushPrepFallbackFile);
+    fetch(primary.url, { method: 'HEAD', cache: 'no-store' })
+      .then((response) => {
+        if (!cancelled && response.ok) setResolved(primary);
+      })
+      .catch(() => {
+        if (!cancelled) setResolved(brushPrepFallbackFile);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mood, primary]);
+
+  return resolved;
 }
 
 function animateRigPart(part: THREE.Object3D | null, mood: CharacterMood, t: number, side: 'left' | 'right') {

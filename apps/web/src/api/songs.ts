@@ -70,15 +70,27 @@ async function readError(response: Response, fallback: string) {
   }
 }
 
-async function apiFetch(path: string, init?: RequestInit) {
+async function apiFetch(path: string, init?: RequestInit & { timeoutMs?: number }) {
+  const timeoutMs = init?.timeoutMs;
+  const controller = timeoutMs ? new AbortController() : null;
+  const timeout = controller ? globalThis.setTimeout(() => controller.abort(), timeoutMs) : null;
+  const { timeoutMs: _timeoutMs, signal, ...fetchInit } = init ?? {};
   try {
-    const response = await fetch(`${API_URL}${path}`, init);
+    const response = await fetch(`${API_URL}${path}`, {
+      ...fetchInit,
+      signal: signal ?? controller?.signal
+    });
     if (!response.ok) throw await readError(response, `${fallbackForPath(path)} (${API_URL})`);
     return response;
   } catch (error) {
     if (error instanceof SongApiError) throw error;
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new SongApiError(`${fallbackForPath(path)} timed out`, 'request_timeout');
+    }
     console.warn(`HabitBuddy API request failed: ${API_URL}${path}`, error);
     throw new SongApiError(`API request failed: ${API_URL}${path}`, 'network_error');
+  } finally {
+    if (timeout) globalThis.clearTimeout(timeout);
   }
 }
 
@@ -140,7 +152,24 @@ export async function generateSongLyrics(input: {
   const response = await apiFetch('/songs/lyrics', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input)
+    body: JSON.stringify(input),
+    timeoutMs: 45000
   });
-  return response.json();
+  return parseGeneratedSongLyrics(await response.json());
+}
+
+function parseGeneratedSongLyrics(body: unknown): GeneratedSongLyrics {
+  if (!body || typeof body !== 'object') {
+    throw new SongApiError('lyrics generation returned an invalid response', 'invalid_lyrics_response');
+  }
+  const value = body as Partial<GeneratedSongLyrics>;
+  if (typeof value.title !== 'string' || typeof value.lyrics !== 'string') {
+    throw new SongApiError('lyrics generation returned an invalid response', 'invalid_lyrics_response');
+  }
+  return {
+    title: value.title,
+    lyrics: value.lyrics,
+    provider: value.provider === 'openai' ? value.provider : 'openai',
+    modelName: typeof value.modelName === 'string' ? value.modelName : 'unknown'
+  };
 }

@@ -6,7 +6,9 @@ coverage
 .env
 .DS_Store
 *.bak
-apps/api/uploads/
+apps/api/uploads/*
+!apps/api/uploads/reference-melodies/
+!apps/api/uploads/reference-melodies/princess_bgm_cut.mp3
 
 # Node / Expo
 npm-debug.log*

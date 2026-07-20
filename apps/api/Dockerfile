@@ -9,6 +9,7 @@ FROM deps AS build
 COPY tsconfig.base.json ./
 COPY apps/api apps/api
 COPY packages/shared packages/shared
+RUN mkdir -p apps/api/uploads/reference-melodies apps/api/uploads/song-seeds
 RUN npx tsc packages/shared/src/index.ts --target ES2022 --module commonjs --moduleResolution node --declaration --outDir packages/shared/dist --esModuleInterop --skipLibCheck
 RUN npm --workspace apps/api run build
 

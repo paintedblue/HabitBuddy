@@ -1,0 +1,16 @@
+[
+  {
+    "origin": [
+      "http://localhost:5173",
+      "http://localhost:4173",
+      "http://localhost",
+      "https://localhost",
+      "https://habit-buddy-api-w32czxu4mq-du.a.run.app",
+      "capacitor://localhost",
+      "ionic://localhost"
+    ],
+    "method": ["GET", "HEAD"],
+    "responseHeader": ["Content-Type", "Content-Length", "Accept-Ranges", "Range"],
+    "maxAgeSeconds": 3600
+  }
+]

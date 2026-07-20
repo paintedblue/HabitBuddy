@@ -46,6 +46,30 @@ async function assertApiReachable(apiUrl) {
   }
 }
 
+function hostReachabilityUrl(nativeApiUrl, hostApiUrl) {
+  try {
+    const url = new URL(nativeApiUrl);
+    if (url.hostname === '10.0.2.2') {
+      const hostUrl = new URL(hostApiUrl);
+      hostUrl.protocol = url.protocol;
+      hostUrl.port = url.port;
+      if (hostUrl.hostname === 'localhost') hostUrl.hostname = '127.0.0.1';
+      return trimTrailingSlash(hostUrl.toString());
+    }
+  } catch {
+    // Fall through to the host URL. A malformed native URL will still be caught
+    // by the bundle assertion below because it must appear exactly in the build.
+  }
+  const reachableUrl = nativeApiUrl.startsWith('http') ? nativeApiUrl : hostApiUrl;
+  try {
+    const url = new URL(reachableUrl);
+    if (url.hostname === 'localhost') url.hostname = '127.0.0.1';
+    return trimTrailingSlash(url.toString());
+  } catch {
+    return reachableUrl;
+  }
+}
+
 function assertAndroidBundleUsesNativeUrl(nativeApiUrl) {
   const publicAssetsDir = resolve(process.cwd(), 'android/app/src/main/assets/public/assets');
   const jsFiles = listJsFiles(publicAssetsDir);
@@ -60,11 +84,12 @@ const packageEnv = readEnvFile(resolve(process.cwd(), '.env'));
 const env = { ...rootEnv, ...packageEnv, ...process.env };
 const hostApiUrl = trimTrailingSlash(env.VITE_API_URL || 'http://localhost:3000');
 const nativeApiUrl = trimTrailingSlash(env.VITE_NATIVE_API_URL || env.VITE_PUBLIC_API_BASE_URL || 'http://10.0.2.2:3000');
+const reachableApiUrl = hostReachabilityUrl(nativeApiUrl, hostApiUrl);
 
-console.log(`Android API diagnostic: host=${hostApiUrl}, emulator=${nativeApiUrl}`);
+console.log(`Android API diagnostic: host=${hostApiUrl}, emulator=${nativeApiUrl}, check=${reachableApiUrl}`);
 
 try {
-  await assertApiReachable(nativeApiUrl.startsWith('http') ? nativeApiUrl : hostApiUrl);
+  await assertApiReachable(reachableApiUrl);
   assertAndroidBundleUsesNativeUrl(nativeApiUrl);
   console.log('Android API diagnostic passed.');
 } catch (error) {

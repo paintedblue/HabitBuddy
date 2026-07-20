@@ -1,17 +1,25 @@
-node_modules
-**/node_modules
 .git
 .DS_Store
+node_modules
+**/node_modules
+.env
+.env.*
+!.env.example
 apps/web/android/.gradle
 apps/web/android/app/build
 apps/web/dist
 apps/web/node_modules
+apps/web
 apps/mobile/node_modules
+apps/mobile
 apps/unity
 apps/My project
 Character
 image
 animation_using
+**/*.blend
+**/*.fbx
+**/*.glb
 coverage
 **/coverage
 **/.turbo

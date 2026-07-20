@@ -3,6 +3,8 @@ import { spawnSync } from 'node:child_process';
 const apkPath = 'android/app/build/outputs/apk/debug/app-debug.apk';
 const packageName = 'com.habitbuddy.web';
 const cacheTrimTarget = '2G';
+const allowDataReset = process.env.ALLOW_ANDROID_DATA_RESET === '1';
+const installArgs = ['install', '-r', apkPath];
 
 function runAdb(args, options = {}) {
   const result = spawnSync('adb', args, {
@@ -40,7 +42,7 @@ function trimEmulatorCaches() {
 }
 
 printDataSpace('설치 전 /data 여유 공간:');
-const install = runAdb(['install', '--no-streaming', '-r', apkPath]);
+const install = runAdb(installArgs);
 printResult(install);
 
 if (install.status === 0) process.exit(0);
@@ -54,11 +56,19 @@ if (insufficientStorage) {
   trimEmulatorCaches();
 
   console.error('\n캐시 정리 후 덮어쓰기 설치를 다시 시도합니다.\n');
-  const retryInstall = runAdb(['install', '--no-streaming', '-r', apkPath]);
+  const retryInstall = runAdb(installArgs);
   printResult(retryInstall);
   if (retryInstall.status === 0) process.exit(0);
 
-  console.error(`\nAndroid 저장공간이 부족해서 덮어쓰기 설치에 실패했습니다. 기존 ${packageName} debug 앱을 삭제한 뒤 다시 설치합니다.`);
+  if (!allowDataReset) {
+    console.error(`\nAndroid 저장공간이 부족해서 덮어쓰기 설치에 실패했습니다.`);
+    console.error(`기존 ${packageName} 앱을 삭제하면 프로필, 동요, 세션 같은 로컬 데이터가 삭제되므로 자동 삭제는 중단합니다.`);
+    console.error('데이터 삭제를 감수하고 재설치하려면 아래처럼 명시적으로 실행하세요:');
+    console.error('ALLOW_ANDROID_DATA_RESET=1 npm run android:install --workspace apps/web\n');
+    process.exit(retryInstall.status ?? 1);
+  }
+
+  console.error(`\nAndroid 저장공간이 부족해서 덮어쓰기 설치에 실패했습니다. ALLOW_ANDROID_DATA_RESET=1이 설정되어 기존 ${packageName} debug 앱을 삭제한 뒤 다시 설치합니다.`);
   console.error('주의: 에뮬레이터/기기의 이 앱 로컬 데이터가 삭제됩니다.\n');
   const uninstall = runAdb(['uninstall', packageName]);
   printResult(uninstall);
@@ -67,7 +77,7 @@ if (insufficientStorage) {
   }
 
   trimEmulatorCaches();
-  const reinstall = runAdb(['install', '--no-streaming', apkPath], { inherit: true });
+  const reinstall = runAdb(['install', apkPath], { inherit: true });
   if (reinstall.status !== 0) {
     printDataSpace('설치 실패 후 /data 여유 공간:');
     console.error('\nAPK가 커서 에뮬레이터 내부 저장공간이 부족합니다. Android Studio Device Manager에서 이 에뮬레이터의 Wipe Data를 실행하거나, Internal Storage가 더 큰 AVD를 사용하세요.');

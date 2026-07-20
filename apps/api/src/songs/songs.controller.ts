@@ -136,7 +136,11 @@ export class SongsController {
         await this.songs.failRequest(request.id, 'missing_suno_track', 'Suno callback did not include a generated track');
         return { ok: true };
       }
-      await this.songs.completeSunoGeneration(request.id, track);
+      try {
+        await this.songs.completeSunoGeneration(request.id, track);
+      } catch (error) {
+        await this.songs.failRequest(request.id, 'audio_upload_failed', error instanceof Error ? error.message : 'Generated audio upload failed');
+      }
     }
 
     return { ok: true };

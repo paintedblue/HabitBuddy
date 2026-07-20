@@ -5,6 +5,8 @@ substitutions:
   _CLOUD_SQL_INSTANCE: ""
   _VPC_CONNECTOR: habit-buddy-connector
   _PUBLIC_API_BASE_URL: ""
+  _AUDIO_BUCKET_NAME: ""
+  _AUDIO_PUBLIC_BASE_URL: ""
 
 steps:
   - name: gcr.io/cloud-builders/docker
@@ -35,7 +37,7 @@ steps:
       - --port
       - "3000"
       - --set-env-vars
-      - NODE_ENV=production,OPENAI_MODEL=gpt-5-mini,SUNO_API_BASE_URL=https://api.sunoapi.org,SUNO_MODEL=V5,PUBLIC_API_BASE_URL=${_PUBLIC_API_BASE_URL},SUNO_CALLBACK_URL=${_PUBLIC_API_BASE_URL}/songs/callbacks/suno
+      - NODE_ENV=production,OPENAI_MODEL=gpt-5-mini,SUNO_API_BASE_URL=https://api.sunoapi.org,SUNO_MODEL=V5,PUBLIC_API_BASE_URL=${_PUBLIC_API_BASE_URL},SUNO_CALLBACK_URL=${_PUBLIC_API_BASE_URL}/songs/callbacks/suno,AUDIO_BUCKET_NAME=${_AUDIO_BUCKET_NAME},AUDIO_PUBLIC_BASE_URL=${_AUDIO_PUBLIC_BASE_URL}
       - --update-secrets
       - OPENAI_API_KEY=OPENAI_API_KEY:latest,SUNO_API_KEY=SUNO_API_KEY:latest,DATABASE_URL=DATABASE_URL:latest,REDIS_URL=REDIS_URL:latest
       - --add-cloudsql-instances

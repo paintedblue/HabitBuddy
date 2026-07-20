@@ -10,6 +10,7 @@ const baseSong: LocalGeneratedSong = {
   habitId: 'brush',
   title: '토리의 양치 노래',
   lyrics: '토리야 양치하자',
+  audioUrl: 'https://storage.googleapis.com/habit-buddy-audio/generated-songs/song-1.mp3',
   status: 'approved',
   createdAt: '2026-07-01T00:00:00.000Z',
   inputs: {
@@ -40,6 +41,7 @@ const sessions: RoutineSession[] = [{
 describe('product quality helpers', () => {
   it('allows only approved songs to start a routine and labels blocked states', () => {
     expect(canStartSong(baseSong)).toBe(true);
+    expect(canStartSong({ ...baseSong, audioUrl: undefined })).toBe(false);
     expect(canStartSong({ ...baseSong, status: 'generating' })).toBe(false);
     expect(songStatusLabel({ ...baseSong, status: 'queued' })).toBe('생성 대기 중');
     expect(songStatusLabel({ ...baseSong, status: 'generating' })).toBe('동요 생성 중');

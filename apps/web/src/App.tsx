@@ -15,16 +15,17 @@ import { colorChoices, defaultProfile, foodChoices, habitBarrierChoices, identit
 import { HabitScene } from './components/HabitScene';
 import { useRoutineSession, type RoutineStatus } from './state/useRoutineSession';
 import { habitBuddyDb, type LocalAuth, type LocalGeneratedSong } from './storage/db';
-import { generateSongLyrics, referenceAudioForMelody, requestSunoSong, syncSongRequest } from './api/songs';
+import { generateSongLyrics, referenceAudioForMelody, requestSunoSong, SongApiError, syncSongRequest } from './api/songs';
 import { buildLyricsGenerationInputs, buildSongGenerationInputs, createLocalSong, createQueuedSunoSong, habitIdForProfile, mergeSyncedSong, type SongPreview } from './songPipeline';
 import { canStartSong, getRoutineLyricLines, sessionExportPayload, songStatusLabel, type SessionExportFormat } from './productQuality';
-import { prepConfigForHabit, type PrepAnimId } from './domain/prep';
+import { prepConfigForHabit, type PrepAnimId, type PrepStep } from './domain/prep';
 import type { CharacterMood } from './state/useRoutineSession';
 
 type Tab = 'profile' | 'routine' | 'stamps';
 type AuthMode = 'loading' | 'setup' | 'locked' | 'authenticated';
 
 const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+const defaultWizardBuddyLine = '어떤 동요를 만들지 같이 골라보자!';
 
 export function App() {
   const [tab, setActiveTab] = useState<Tab | null>(null);
@@ -37,6 +38,7 @@ export function App() {
   const [parentCode, setParentCode] = useState('');
   const [characterPickerOpen, setCharacterPickerOpen] = useState(false);
   const [showPauseConfirm, setShowPauseConfirm] = useState(false);
+  const [wizardBuddyLine, setWizardBuddyLine] = useState(defaultWizardBuddyLine);
   const routine = useRoutineSession(profile, auth?.parentPinLast4 ?? '');
   const character = characters.find((item) => item.id === profile.characterId) ?? characters[0];
   const totalSeconds = routine.selectedHabit.durationSeconds;
@@ -125,11 +127,13 @@ export function App() {
 
   function closePanel() {
     setActiveTab(null);
+    setWizardBuddyLine(defaultWizardBuddyLine);
   }
 
   function changeTab(nextTab: Tab) {
     if (routine.status !== 'home') return;
     setCharacterPickerOpen(false);
+    setWizardBuddyLine(defaultWizardBuddyLine);
     setActiveTab((current) => (current === nextTab ? null : nextTab));
   }
 
@@ -142,23 +146,26 @@ export function App() {
     setActiveTab('profile');
   }
 
-  async function saveSongFromProfile(preview: SongPreview) {
-    const referenceAudio = referenceAudioForMelody(profile.melodyPresetId);
+  async function saveSongFromProfile(preview: SongPreview, targetProfile = profile) {
+    const referenceAudio = referenceAudioForMelody(targetProfile.melodyPresetId);
     if (referenceAudio) {
       try {
         const request = await requestSunoSong({
-          childId: profile.id,
-          habitId: habitIdForProfile(profile),
+          childId: targetProfile.id,
+          habitId: habitIdForProfile(targetProfile),
           lyrics: preview.lyrics,
-          inputs: buildSongGenerationInputs(profile, {
+          inputs: buildSongGenerationInputs(targetProfile, {
             url: referenceAudio.url,
             fileName: referenceAudio.fileName,
             durationSeconds: referenceAudio.durationSeconds
           })
         });
-        const song = createQueuedSunoSong(profile, preview, request);
+        const song = createQueuedSunoSong(targetProfile, preview, request);
         await habitBuddyDb.saveSong(song);
         setSongs(await habitBuddyDb.listSongs());
+        if (request.status === 'failed') {
+          throw new SongApiError(request.errorMessage ?? '동요 생성 요청을 시작하지 못했어요.', request.errorCode ?? 'suno_request_failed');
+        }
         return song;
       } catch (error) {
         console.warn('Suno song request failed; no fallback song was saved.', error);
@@ -166,7 +173,7 @@ export function App() {
       }
     }
 
-    const song = createLocalSong(profile, preview);
+    const song = createLocalSong(targetProfile, preview);
     await habitBuddyDb.saveSong(song);
     setSongs(await habitBuddyDb.listSongs());
     return song;
@@ -280,23 +287,30 @@ export function App() {
 
   return (
     <main className={routineActive ? 'app-shell routine-mode' : 'app-shell'}>
-      <section className={panelOpen ? 'stage dimmed' : 'stage'} style={{ '--accent': character.accent } as CSSProperties}>
+      <section className={panelOpen ? 'stage panel-open' : 'stage'} style={{ '--accent': character.accent } as CSSProperties}>
         <TopBar character={character} childName={profile.name} panelOpen={panelOpen} onLock={lockApp} onLogout={() => void logout()} />
         {routine.status === 'home' && characterPickerOpen ? (
           <CharacterPicker selected={character} onSelect={selectCharacter} />
         ) : null}
         <HomeScene
           character={character}
+          buddyLine={tab === 'profile' ? wizardBuddyLine : undefined}
           message={message}
+          panelOpen={panelOpen}
           routineActive={routineActive}
           onOpenCharacterPicker={() => setCharacterPickerOpen((open) => !open)}
         />
-        {!routineActive ? <BottomTabs activeTab={tab} character={character} onChange={changeTab} /> : null}
+        {!routineActive && !panelOpen ? <BottomTabs activeTab={tab} character={character} onChange={changeTab} /> : null}
       </section>
 
       {routine.status === 'home' && tab ? (
         <DrawerPanel onClose={closePanel}>
-          {tab === 'profile' ? <ProfilePanel character={character} profile={profile} onChange={setProfile} onClose={closePanel} onGenerateLyrics={generateLyricsFromProfile} onGoRoutine={() => setActiveTab('routine')} onSaveSong={saveSongFromProfile} /> : null}
+          {tab === 'profile' ? <ProfilePanel character={character} profile={profile} onBuddyLine={setWizardBuddyLine} onChange={setProfile} onClose={closePanel} onGenerateLyrics={generateLyricsFromProfile} onSaveSong={saveSongFromProfile} onStartGeneratedRoutine={async (song) => {
+            setSongs(await habitBuddyDb.listSongs());
+            closePanel();
+            const habit = habitTemplates.find((item) => item.id === song.habitId) ?? habitTemplates[0];
+            await routine.startHabit(habit, song);
+          }} /> : null}
           {tab === 'routine' ? <RoutinePicker selectedId={habitIdForProfile(profile)} songs={songs} onCreateSong={openSongMakerForHabit} onStart={(habit, song) => void routine.startHabit(habit, song)} /> : null}
           {tab === 'stamps' ? <StampsPanel defaultHabitId={habitIdForProfile(profile)} sessions={sessions} /> : null}
         </DrawerPanel>
@@ -519,29 +533,34 @@ function CharacterPicker({ onSelect, selected }: { onSelect: (character: Charact
 }
 
 function HomeScene({
+  buddyLine,
   character,
   message,
   onOpenCharacterPicker,
+  panelOpen,
   routineActive
 }: {
+  buddyLine?: string;
   character: Character;
   message: string;
   onOpenCharacterPicker: () => void;
+  panelOpen: boolean;
   routineActive: boolean;
 }) {
   if (routineActive) return null;
+  const displayMessage = panelOpen && buddyLine ? buddyLine : message;
 
   return (
     <>
       <div className="home-3d-scene">
         <HabitScene drawerOpen={false} mood="wave" rewardPulse={false} stage="main" variant="home" />
       </div>
-      <div className="home-prompt">
+      <div className={panelOpen ? 'home-prompt buddy-active' : 'home-prompt'}>
         <button className="home-character-link" type="button" onClick={onOpenCharacterPicker}>
           <span>♪</span>
           {character.name}
         </button>
-        <p>{message}</p>
+        <p>{displayMessage}</p>
         <span />
       </div>
     </>
@@ -589,12 +608,30 @@ function DrawerPanel({ children, onClose }: { children: ReactNode; onClose: () =
   );
 }
 
-type ProfileWizardStep = 'habit' | 'barrier' | 'identity' | 'food' | 'color' | 'melody' | 'result';
+type ProfileWizardStep = 'habit' | 'barrier' | 'identity' | 'food' | 'color' | 'lyrics' | 'melody' | 'melodyGeneration';
 type DirectInputTarget = 'barrier' | 'identity' | 'food' | null;
+type LyricsGenerationStatus = 'idle' | 'loading' | 'success' | 'error';
 
-const profileWizardSteps: ProfileWizardStep[] = ['habit', 'barrier', 'identity', 'food', 'color', 'melody', 'result'];
+const profileWizardSteps: ProfileWizardStep[] = ['habit', 'barrier', 'identity', 'food', 'color', 'lyrics', 'melody', 'melodyGeneration'];
 const previewDurationSeconds = 20;
 const princessPreviewAudioUrl = '/assets/audio/princess_bgm_cut.mp3';
+const songMakingLines = [
+  '동요에 예쁜 반주를 넣고 있어요',
+  '목소리가 동요랑 잘 어울리게 만들고 있어요',
+  '음표들이 통통 뛰며 동요를 만들고 있어요',
+  '따라 부르기 쉽게 동요를 다듬고 있어요',
+  '조금만 기다리면 신나는 동요가 나와요'
+];
+
+function randomSongMakingLineIndex(previousIndex?: number) {
+  if (songMakingLines.length <= 1) return 0;
+  let nextIndex = Math.floor(Math.random() * songMakingLines.length);
+  while (nextIndex === previousIndex) {
+    nextIndex = Math.floor(Math.random() * songMakingLines.length);
+  }
+  return nextIndex;
+}
+
 const habitChoiceMeta: Record<string, { icon: string; tone: string }> = {
   '양치': { icon: '🪥', tone: '#FF8D86' },
   '손씻기': { icon: '🫧', tone: '#78D8C7' },
@@ -605,20 +642,22 @@ const habitChoiceMeta: Record<string, { icon: string; tone: string }> = {
 
 function ProfilePanel({
   character,
+  onBuddyLine,
   profile,
   onChange,
   onClose,
   onGenerateLyrics,
-  onGoRoutine,
-  onSaveSong
+  onSaveSong,
+  onStartGeneratedRoutine
 }: {
   character: Character;
+  onBuddyLine: (line: string) => void;
   profile: ChildProfile;
   onChange: (profile: ChildProfile) => void;
   onClose: () => void;
   onGenerateLyrics: (profile: ChildProfile) => Promise<SongPreview>;
-  onGoRoutine: () => void;
-  onSaveSong: (preview: SongPreview) => Promise<LocalGeneratedSong>;
+  onSaveSong: (preview: SongPreview, profileOverride?: ChildProfile) => Promise<LocalGeneratedSong>;
+  onStartGeneratedRoutine: (song: LocalGeneratedSong) => Promise<void>;
 }) {
   const [step, setStep] = useState<ProfileWizardStep>('habit');
   const [directTarget, setDirectTarget] = useState<DirectInputTarget>(null);
@@ -628,17 +667,53 @@ function ProfilePanel({
   const [previewingMelodyId, setPreviewingMelodyId] = useState<MelodyPresetId | null>(null);
   const [playProgress, setPlayProgress] = useState(0);
   const [savingSong, setSavingSong] = useState(false);
+  const [generatedSong, setGeneratedSong] = useState<LocalGeneratedSong | null>(null);
+  const [selectedGenerationMelodyId, setSelectedGenerationMelodyId] = useState<MelodyPresetId | undefined>(profile.melodyPresetId);
+  const [startingRoutine, setStartingRoutine] = useState(false);
   const [aiSongPreview, setAiSongPreview] = useState<SongPreview | null>(null);
   const [lyricsConfirmed, setLyricsConfirmed] = useState(false);
-  const [lyricsLoading, setLyricsLoading] = useState(false);
+  const [lyricsStatus, setLyricsStatus] = useState<LyricsGenerationStatus>('idle');
   const [lyricsError, setLyricsError] = useState('');
   const [generationError, setGenerationError] = useState('');
   const [completedSteps, setCompletedSteps] = useState<Set<ProfileWizardStep>>(() => new Set());
   const playTimer = useRef<number | null>(null);
   const previewAudio = useRef<HTMLAudioElement | null>(null);
+  const generationRequestKey = useRef('');
+  const lyricsRequestId = useRef(0);
+  const latestLyricsProfile = useRef(profile);
+  const latestGenerateLyrics = useRef(onGenerateLyrics);
   const stepIndex = profileWizardSteps.indexOf(step);
+  const lyricsLoading = lyricsStatus === 'loading';
   const localSongPreview = useMemo(() => buildSongPreview(profile, lyricVariant), [lyricVariant, profile]);
   const songPreview = aiSongPreview ?? localSongPreview;
+  const lyricsInputKey = useMemo(
+    () => [
+      profile.name,
+      profile.hardHabit,
+      profile.habitBarrier,
+      profile.dreamIdentity,
+      profile.dreamIdentityCustom,
+      profile.favoriteFood,
+      profile.favoriteColor,
+      profile.melodyPresetId,
+      profile.rhythmPresetId,
+      profile.instrumentPresetId
+    ].join('|'),
+    [
+      profile.dreamIdentity,
+      profile.dreamIdentityCustom,
+      profile.favoriteColor,
+      profile.favoriteFood,
+      profile.habitBarrier,
+      profile.hardHabit,
+      profile.instrumentPresetId,
+      profile.melodyPresetId,
+      profile.name,
+      profile.rhythmPresetId
+    ]
+  );
+  latestLyricsProfile.current = profile;
+  latestGenerateLyrics.current = onGenerateLyrics;
 
   useEffect(() => () => {
     if (playTimer.current) window.clearInterval(playTimer.current);
@@ -659,42 +734,123 @@ function ProfilePanel({
   }, [step]);
 
   useEffect(() => {
-    setAiSongPreview(null);
-    setLyricsConfirmed(false);
-    setLyricsError('');
-  }, [profile]);
+    if (step === 'lyrics') {
+      if (lyricsLoading) {
+        onBuddyLine('가사를 만들고 있어. 잠깐만 기다려줘!');
+      } else if (aiSongPreview) {
+        onBuddyLine('가사가 나왔어. 마음에 드는지 같이 볼까?');
+      }
+      return;
+    }
+    if (step === 'melody') {
+      onBuddyLine('이제 가사에 어울리는 예시 동요를 골라보자!');
+      return;
+    }
+    if (step === 'melodyGeneration') {
+      onBuddyLine('노래를 만드는 동안 내가 옆에서 같이 기다릴게!');
+    }
+  }, [aiSongPreview, lyricsLoading, onBuddyLine, step]);
 
   useEffect(() => {
-    if (step !== 'result') return;
-    let cancelled = false;
-    setLyricsLoading(true);
+    setAiSongPreview(null);
+    setLyricsConfirmed(false);
+    setLyricsStatus('idle');
+    setLyricsError('');
+    setGenerationError('');
+    setGeneratedSong(null);
+    setStartingRoutine(false);
+    generationRequestKey.current = '';
+    lyricsRequestId.current += 1;
+  }, [lyricsInputKey]);
+
+  useEffect(() => {
+    if (step !== 'lyrics') return;
+    if (aiSongPreview) return;
+    const requestId = lyricsRequestId.current + 1;
+    lyricsRequestId.current = requestId;
+    setLyricsStatus('loading');
     setLyricsError('');
     setAiSongPreview(null);
     setLyricsConfirmed(false);
-    onGenerateLyrics(profile)
+    latestGenerateLyrics.current(latestLyricsProfile.current)
       .then((preview) => {
-        if (!cancelled) setAiSongPreview(preview);
+        if (lyricsRequestId.current !== requestId) return;
+        setAiSongPreview(preview);
+        setLyricsStatus('success');
       })
       .catch((error) => {
         console.warn('OpenAI lyrics generation failed; blocking song generation until AI lyrics are available.', error);
-        if (!cancelled) {
-          const code = error instanceof Error && 'code' in error ? String((error as Error & { code?: string }).code) : '';
-          setLyricsError(code === 'missing_openai_api_key'
-              ? 'API 서버에 AI 키가 없어 가사를 만들 수 없어요.'
-            : code === 'lyrics_safety_failed'
-              ? 'AI 가사가 안전 기준을 통과하지 못했어요. 다시 만들어 주세요.'
-              : code === 'network_error'
-                ? 'API 서버에 연결할 수 없어요. API 서버가 켜져 있는지 확인해 주세요.'
-                : 'AI 가사를 만들 수 없어요. 잠시 후 다시 시도해 주세요.');
-        }
+        if (lyricsRequestId.current !== requestId) return;
+        setLyricsStatus('error');
+        setLyricsError(lyricsErrorMessageFor(error));
       })
       .finally(() => {
-        if (!cancelled) setLyricsLoading(false);
+        if (lyricsRequestId.current === requestId) {
+          setLyricsStatus((current) => current === 'loading' ? 'idle' : current);
+        }
       });
     return () => {
-      cancelled = true;
+      if (lyricsRequestId.current === requestId) lyricsRequestId.current += 1;
     };
-  }, [lyricVariant, step]);
+  }, [aiSongPreview, lyricVariant, lyricsInputKey, step]);
+
+  useEffect(() => {
+    if (step !== 'melodyGeneration' || !aiSongPreview || !lyricsConfirmed || !selectedGenerationMelodyId) return;
+    const key = `${aiSongPreview.title}|${selectedGenerationMelodyId}|${lyricVariant}`;
+    if (generationRequestKey.current === key) return;
+    generationRequestKey.current = key;
+    setSavingSong(true);
+    setGenerationError('');
+    setGeneratedSong(null);
+    setStartingRoutine(false);
+    onSaveSong(aiSongPreview, { ...profile, melodyPresetId: selectedGenerationMelodyId })
+      .then((song) => {
+        setGeneratedSong(song);
+      })
+      .catch((error) => {
+        console.warn('Suno song request failed after melody selection.', error);
+        setGenerationError('동요 생성에 실패했어요. 다른 멜로디를 선택하거나 네트워크와 API 설정을 확인해 주세요.');
+      })
+      .finally(() => {
+        setSavingSong(false);
+      });
+  }, [aiSongPreview, lyricVariant, lyricsConfirmed, onSaveSong, profile, selectedGenerationMelodyId, step]);
+
+  useEffect(() => {
+    if (step !== 'melodyGeneration' || !generatedSong?.requestId || canStartSong(generatedSong)) return;
+    let cancelled = false;
+    async function syncGeneratedSong() {
+      if (!generatedSong?.requestId) return;
+      try {
+        const synced = await syncSongRequest(generatedSong.requestId);
+        const merged = mergeSyncedSong(generatedSong, synced);
+        if (cancelled) return;
+        if (merged !== generatedSong) {
+          await habitBuddyDb.saveSong(merged);
+          setGeneratedSong(merged);
+        }
+        if (merged.status === 'failed') {
+          setGenerationError(merged.errorMessage ?? '동요 생성에 실패했어요. 다른 멜로디를 선택해 주세요.');
+        }
+      } catch (error) {
+        console.warn('Generated song sync failed.', error);
+      }
+    }
+    void syncGeneratedSong();
+    const timer = window.setInterval(() => {
+      void syncGeneratedSong();
+    }, 5000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [generatedSong, step]);
+
+  useEffect(() => {
+    if (step !== 'melodyGeneration' || !generatedSong || !canStartSong(generatedSong) || startingRoutine) return;
+    setStartingRoutine(true);
+    void onStartGeneratedRoutine(generatedSong);
+  }, [generatedSong, onStartGeneratedRoutine, startingRoutine, step]);
 
   function stopPreview() {
     if (playTimer.current) window.clearInterval(playTimer.current);
@@ -717,7 +873,7 @@ function ProfilePanel({
 
   function advanceFrom(targetStep: ProfileWizardStep) {
     const targetIndex = profileWizardSteps.indexOf(targetStep);
-    if (targetIndex >= 0 && targetStep !== 'result') setStep(profileWizardSteps[targetIndex + 1]);
+    if (targetIndex >= 0 && targetStep !== 'melodyGeneration') setStep(profileWizardSteps[targetIndex + 1]);
   }
 
   function goBack() {
@@ -725,12 +881,18 @@ function ProfilePanel({
       onClose();
       return;
     }
+    if (step === 'melodyGeneration') {
+      setGenerationError('');
+      setGeneratedSong(null);
+      setStartingRoutine(false);
+      generationRequestKey.current = '';
+    }
     setStep(profileWizardSteps[stepIndex - 1]);
   }
 
   function goNext() {
     if (!canContinue()) return;
-    if (step === 'result') return;
+    if (step === 'lyrics' || step === 'melodyGeneration') return;
     markStepSelected();
     setStep(profileWizardSteps[stepIndex + 1]);
   }
@@ -741,16 +903,24 @@ function ProfilePanel({
     if (step === 'identity') return profile.dreamIdentity.trim().length > 0;
     if (step === 'food') return profile.favoriteFood.trim().length > 0;
     if (step === 'color') return profile.favoriteColor.trim().length > 0;
-    if (step === 'melody') return !!profile.melodyPresetId;
     return true;
   }
 
   function applyDirectValue() {
     const value = directValue.trim();
     if (!value || !directTarget) return;
-    if (directTarget === 'barrier') updateProfile({ ...profile, habitBarrier: value });
-    if (directTarget === 'identity') updateProfile({ ...profile, dreamIdentity: value, dreamIdentityCustom: value });
-    if (directTarget === 'food') updateProfile({ ...profile, favoriteFood: value });
+    if (directTarget === 'barrier') {
+      updateProfile({ ...profile, habitBarrier: value });
+      onBuddyLine(`"${value}" 때문에 어렵구나. 노래가 도와줄 거야!`);
+    }
+    if (directTarget === 'identity') {
+      updateProfile({ ...profile, dreamIdentity: value, dreamIdentityCustom: value });
+      onBuddyLine(`${value} 꿈에 한 걸음 가까워지는 노래를 만들자!`);
+    }
+    if (directTarget === 'food') {
+      updateProfile({ ...profile, favoriteFood: value });
+      onBuddyLine(`${value} 좋아하는구나. 그 맛있는 느낌도 넣어볼게!`);
+    }
     markStepSelected(directTarget);
     setDirectTarget(null);
     setDirectValue('');
@@ -825,6 +995,9 @@ function ProfilePanel({
     setPlayProgress(0);
     setAiSongPreview(null);
     setLyricsConfirmed(false);
+    setLyricsStatus('idle');
+    setLyricsError('');
+    lyricsRequestId.current += 1;
     setLyricVariant((value) => value + 1);
   }
 
@@ -832,81 +1005,72 @@ function ProfilePanel({
     if (!aiSongPreview) return;
     setGenerationError('');
     setLyricsConfirmed(true);
+    setStep('melody');
   }
 
-  async function saveAndGoRoutine() {
-    if (!aiSongPreview) {
-      setGenerationError('가사가 만들어진 뒤에 동요를 만들 수 있어요.');
-      return;
-    }
-    if (!lyricsConfirmed) {
-      setGenerationError('가사를 확정한 뒤에 동요를 만들 수 있어요.');
-      return;
-    }
-    setSavingSong(true);
+  function selectMelody(melodyPresetId: MelodyPresetId) {
+    if (!aiSongPreview || !lyricsConfirmed) return;
+    stopPreview();
     setGenerationError('');
-    try {
-      await onSaveSong(aiSongPreview);
-      stopPreview();
-      onGoRoutine();
-    } catch {
-      setGenerationError('동요 생성에 실패했어요. 네트워크와 API 설정을 확인해 주세요.');
-    } finally {
-      setSavingSong(false);
-    }
+    setGeneratedSong(null);
+    setStartingRoutine(false);
+    generationRequestKey.current = '';
+    setSelectedGenerationMelodyId(melodyPresetId);
+    updateProfile({ ...profile, melodyPresetId });
   }
 
-  async function saveAndMakeAnother() {
-    if (!aiSongPreview) {
-      setGenerationError('가사가 만들어진 뒤에 동요를 만들 수 있어요.');
-      return;
-    }
-    if (!lyricsConfirmed) {
-      setGenerationError('가사를 확정한 뒤에 동요를 만들 수 있어요.');
-      return;
-    }
-    setSavingSong(true);
-    setGenerationError('');
-    try {
-      await onSaveSong(aiSongPreview);
-      stopPreview();
-      setPlayProgress(0);
-      setLyricVariant((value) => value + 1);
-      setStep('melody');
-    } catch {
-      setGenerationError('동요 생성에 실패했어요. 네트워크와 API 설정을 확인해 주세요.');
-    } finally {
-      setSavingSong(false);
-    }
+  function startMelodyGeneration() {
+    if (!aiSongPreview || !lyricsConfirmed || !selectedGenerationMelodyId || !referenceAudioForMelody(selectedGenerationMelodyId)) return;
+    setStep('melodyGeneration');
   }
 
   return (
     <section className="panel-page profile-page song-wizard">
+      <button className="wizard-top-back-button" type="button" onClick={goBack}>
+        ← 뒤로
+      </button>
       <PanelTitle icon="★" title={`${profile.name || '친구'}의 동요 만들기`} />
       <Dots active={stepIndex} count={profileWizardSteps.length} color={character.accent} />
-      {step !== 'result' ? <WizardStepContent profile={profile} selectedSteps={completedSteps} step={step} directTarget={directTarget} directValue={directValue} previewingMelodyId={previewingMelodyId} onApplyDirect={applyDirectValue} onChangeDirect={setDirectValue} onChangeProfile={updateProfile} onPreviewMelody={previewMelody} onSelectStep={markStepSelected} onSetDirectTarget={setDirectTarget} /> : (
+      {step !== 'lyrics' && step !== 'melody' && step !== 'melodyGeneration' ? <WizardStepContent profile={profile} selectedSteps={completedSteps} step={step} directTarget={directTarget} directValue={directValue} previewingMelodyId={previewingMelodyId} onApplyDirect={applyDirectValue} onBuddyLine={onBuddyLine} onChangeDirect={setDirectValue} onChangeProfile={updateProfile} onPreviewMelody={previewMelody} onSelectStep={markStepSelected} onSetDirectTarget={setDirectTarget} /> : null}
+      {step === 'lyrics' ? (
         <SongResult
           preview={songPreview}
-          playing={playing}
-          progress={playProgress}
-          saving={savingSong}
           lyricsLoading={lyricsLoading}
           lyricsError={lyricsError}
           lyricsReady={!!aiSongPreview}
           lyricsConfirmed={lyricsConfirmed}
           generationError={generationError}
-          referenceAudio={referenceAudioForMelody(profile.melodyPresetId)}
           onConfirmLyrics={confirmLyrics}
-          onPlay={togglePreview}
           onRegenerate={regenerate}
-          onSaveAndGoRoutine={() => void saveAndGoRoutine()}
         />
-      )}
-      <div className={step === 'result' ? 'wizard-footer result-footer' : 'wizard-footer'}>
-        <button className="wizard-back-button" type="button" onClick={goBack}>
-          ← 뒤로
-        </button>
-        {step !== 'result' ? (
+      ) : null}
+      {step === 'melody' ? (
+        <MelodySelectionStep
+          previewingMelodyId={previewingMelodyId}
+          selectedMelodyId={profile.melodyPresetId}
+          canGenerate={!!selectedGenerationMelodyId && !!referenceAudioForMelody(selectedGenerationMelodyId)}
+          onGenerate={startMelodyGeneration}
+          onPreviewMelody={previewMelody}
+          onSelectMelody={selectMelody}
+        />
+      ) : null}
+      {step === 'melodyGeneration' ? (
+        <MelodyGenerationStep
+          error={generationError}
+          generatedSong={generatedSong}
+          saving={savingSong}
+          selectedMelodyId={selectedGenerationMelodyId}
+          onRetryMelody={() => {
+            setGenerationError('');
+            setGeneratedSong(null);
+            setStartingRoutine(false);
+            generationRequestKey.current = '';
+            setStep('melody');
+          }}
+        />
+      ) : null}
+      <div className={step === 'lyrics' || step === 'melody' || step === 'melodyGeneration' ? 'wizard-footer result-footer' : 'wizard-footer'}>
+        {step !== 'lyrics' && step !== 'melody' && step !== 'melodyGeneration' ? (
           <button className="wizard-next-button" type="button" disabled={!canContinue()} onClick={goNext}>
             다음 →
           </button>
@@ -923,14 +1087,52 @@ function completedWizardStepsForProfile(profile: ChildProfile) {
   if (profile.dreamIdentity.trim()) completed.add('identity');
   if (profile.favoriteFood.trim()) completed.add('food');
   if (profile.favoriteColor.trim()) completed.add('color');
-  if (profile.melodyPresetId) completed.add('melody');
   return completed;
+}
+
+function lyricsErrorMessageFor(error: unknown) {
+  const code = error instanceof Error && 'code' in error ? String((error as Error & { code?: string }).code) : '';
+  if (code === 'missing_openai_api_key') return 'API 서버에 AI 키가 없어 가사를 만들 수 없어요.';
+  if (code === 'lyrics_safety_failed') return 'AI 가사가 안전 기준을 통과하지 못했어요. 다시 만들어 주세요.';
+  if (code === 'request_timeout' || code === 'openai_timeout') return 'AI 가사 생성 시간이 너무 길어요. 다시 시도해 주세요.';
+  if (code === 'invalid_lyrics_response') return 'AI 가사 응답 형식이 올바르지 않아요. 다시 시도해 주세요.';
+  if (code === 'network_error') return 'API 서버에 연결할 수 없어요. API 서버가 켜져 있는지 확인해 주세요.';
+  return 'AI 가사를 만들 수 없어요. 잠시 후 다시 시도해 주세요.';
+}
+
+function buddyLineForHabit(habitName: string) {
+  if (habitName.includes('양치')) return '양치는 반짝반짝 치아를 지켜주는 일이야!';
+  if (habitName.includes('손')) return '손을 깨끗이 씻으면 더 건강하게 놀 수 있어!';
+  if (habitName.includes('정리')) return '정리하면 장난감도 집을 찾아가서 기분이 좋아져!';
+  if (habitName.includes('채소')) return '채소를 먹으면 몸이 튼튼하게 자랄 수 있어!';
+  return `${habitName} 습관을 노래로 재미있게 만들어보자!`;
+}
+
+function buddyLineForBarrier(reason: string) {
+  return `${reason} 때문에 어렵구나. 그럴 수 있어. 노래가 도와줄 거야!`;
+}
+
+function buddyLineForIdentity(identity: string) {
+  return `좋아, ${identity} 꿈에 한 걸음 가까워지는 노래를 만들자!`;
+}
+
+function buddyLineForFood(food: string) {
+  if (food.includes('아이스크림')) return '아이스크림은 시원하고 정말 맛있지!';
+  if (food.includes('딸기')) return '딸기는 새콤달콤해서 노래에도 잘 어울려!';
+  if (food.includes('피자')) return '피자는 고소하고 신나는 느낌이 있어!';
+  if (food.includes('바나나')) return '바나나는 달콤하고 힘이 나는 맛이지!';
+  return `${food} 좋아하는구나. 그 맛있는 느낌도 넣어볼게!`;
+}
+
+function buddyLineForColor(colorLabel: string) {
+  return `${colorLabel} 느낌을 노래에 살짝 넣어볼게!`;
 }
 
 function WizardStepContent({
   directTarget,
   directValue,
   onApplyDirect,
+  onBuddyLine,
   onChangeDirect,
   onChangeProfile,
   onPreviewMelody,
@@ -944,6 +1146,7 @@ function WizardStepContent({
   directTarget: DirectInputTarget;
   directValue: string;
   onApplyDirect: () => void;
+  onBuddyLine: (line: string) => void;
   onChangeDirect: (value: string) => void;
   onChangeProfile: (profile: ChildProfile) => void;
   onPreviewMelody: (melodyPresetId: MelodyPresetId) => void;
@@ -969,6 +1172,7 @@ function WizardStepContent({
               onClick={() => {
                 onSelectStep('habit');
                 onChangeProfile({ ...profile, hardHabit: habit.name, habitBarrier: '' });
+                onBuddyLine(buddyLineForHabit(habit.name));
               }}
             />
           ))}
@@ -993,6 +1197,7 @@ function WizardStepContent({
               onClick={() => {
                 onSelectStep('barrier');
                 onChangeProfile({ ...profile, habitBarrier: label });
+                onBuddyLine(buddyLineForBarrier(label));
               }}
             />
           ))}
@@ -1017,6 +1222,7 @@ function WizardStepContent({
               onClick={() => {
                 onSelectStep('identity');
                 onChangeProfile({ ...profile, dreamIdentity: item.label, dreamIdentityCustom: '' });
+                onBuddyLine(buddyLineForIdentity(item.label));
               }}
             />
           ))}
@@ -1041,6 +1247,7 @@ function WizardStepContent({
               onClick={() => {
                 onSelectStep('food');
                 onChangeProfile({ ...profile, favoriteFood: item.label });
+                onBuddyLine(buddyLineForFood(item.label));
               }}
             />
           ))}
@@ -1064,6 +1271,7 @@ function WizardStepContent({
               onClick={() => {
                 onSelectStep('color');
                 onChangeProfile({ ...profile, favoriteColor: item.color });
+                onBuddyLine(buddyLineForColor(item.label));
               }}
             >
               {item.label}
@@ -1074,15 +1282,38 @@ function WizardStepContent({
     );
   }
 
+  return null;
+}
+
+function MelodySelectionStep({
+  canGenerate,
+  onGenerate,
+  onPreviewMelody,
+  onSelectMelody,
+  previewingMelodyId,
+  selectedMelodyId
+}: {
+  canGenerate: boolean;
+  onGenerate: () => void;
+  onPreviewMelody: (melodyPresetId: MelodyPresetId) => void;
+  onSelectMelody: (melodyPresetId: MelodyPresetId) => void;
+  previewingMelodyId: MelodyPresetId | null;
+  selectedMelodyId?: MelodyPresetId;
+}) {
   return (
     <div className="wizard-body">
-      <WizardQuestion title="어떤 노래로 만들까?" subtitle="버튼을 눌러 들어보고, 마음에 드는 걸 골라요" />
+      <WizardQuestion title="어떤 예시 동요로 만들까?" subtitle="가사에 어울리는 멜로디를 골라요" />
       <div className="melody-list">
         {melodyPresets.map((preset) => {
           const isPreviewing = previewingMelodyId === preset.id;
+          const referenceAudio = referenceAudioForMelody(preset.id);
+          const isReady = !!referenceAudio;
           return (
             <div
-              className={profile.melodyPresetId === preset.id ? 'melody-card selected' : 'melody-card'}
+              className={[
+                selectedMelodyId === preset.id ? 'melody-card selected' : 'melody-card',
+                !isReady ? 'disabled' : ''
+              ].filter(Boolean).join(' ')}
               key={preset.id}
             >
               <button className={isPreviewing ? 'melody-play-button playing' : 'melody-play-button'} type="button" aria-label={isPreviewing ? `${preset.label} 멈춤` : `${preset.label} 들어보기`} onClick={() => onPreviewMelody(preset.id)}>
@@ -1091,21 +1322,116 @@ function WizardStepContent({
               <button
                 className="melody-select-main"
                 type="button"
-                onClick={() => {
-                  onSelectStep('melody');
-                  onChangeProfile({ ...profile, melodyPresetId: preset.id });
-                }}
+                disabled={!isReady}
+                onClick={() => onSelectMelody(preset.id)}
               >
                 <span className="melody-icon">{preset.icon}</span>
                 <span>
                   <strong>{preset.label}</strong>
-                  <small>{preset.description}</small>
+                  <small>{isReady ? preset.description : '이 예시 동요는 곧 준비돼요'}</small>
                 </span>
               </button>
-              <em>{profile.melodyPresetId === preset.id ? '✓' : '+'}</em>
+              <em>{selectedMelodyId === preset.id ? '✓' : isReady ? '+' : '…'}</em>
             </div>
           );
         })}
+      </div>
+      <div className="song-save-row">
+        <button className="song-routine-button" type="button" disabled={!canGenerate} onClick={onGenerate}>
+          이 동요랑 비슷한 느낌으로 만들래요
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function MelodyGenerationStep({
+  error,
+  generatedSong,
+  onRetryMelody,
+  saving,
+  selectedMelodyId
+}: {
+  error: string;
+  generatedSong: LocalGeneratedSong | null;
+  onRetryMelody: () => void;
+  saving: boolean;
+  selectedMelodyId?: MelodyPresetId;
+}) {
+  const melody = melodyPresets.find((preset) => preset.id === selectedMelodyId);
+  const contentReady = !!generatedSong && canStartSong(generatedSong);
+  const [makingLineIndex, setMakingLineIndex] = useState(() => randomSongMakingLineIndex());
+  const generationStatus = saving
+    ? '생성 요청을 보내고 있어요'
+    : generatedSong?.status === 'generating'
+      ? '동요를 만들고 있어요'
+      : generatedSong?.status === 'queued'
+        ? '생성 순서를 기다리고 있어요'
+        : '동요 완성을 기다리고 있어요';
+  const progress = saving
+    ? 24
+    : generatedSong?.status === 'queued'
+      ? 48
+      : generatedSong?.status === 'generating'
+        ? 72
+        : 96;
+  const progressStatus = progress >= 96 ? '거의 다 됐어요' : progress >= 72 ? '조금만 기다려요' : '차근차근 만들고 있어요';
+  useEffect(() => {
+    if (error || contentReady) return;
+    const timer = window.setInterval(() => {
+      setMakingLineIndex((current) => randomSongMakingLineIndex(current));
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [contentReady, error]);
+
+  if (!error && !contentReady) {
+    return (
+      <div className="song-making-screen">
+        <div className="song-making-pill">♪ 멜로디 만들기</div>
+        <h2>동요를 만들고 있어요</h2>
+        <section className="song-making-card" aria-label={generationStatus}>
+          <div className="song-making-card-top">
+            <strong>{progress}<span>%</span></strong>
+            <em>{progressStatus}</em>
+          </div>
+          <div className="song-making-progress" aria-label={`동요 생성 진행률 ${progress}%`}>
+            <span style={{ width: `${progress}%` }} />
+          </div>
+          <p>{songMakingLines[makingLineIndex]}</p>
+        </section>
+        <div className="song-making-dots" aria-hidden="true">
+          <span className={progress >= 24 ? 'active' : ''} />
+          <span className={progress >= 72 ? 'active' : ''} />
+          <span className={progress >= 96 ? 'active' : ''} />
+        </div>
+        <div className="song-save-row">
+          <button className="song-regenerate-button" type="button" disabled={saving} onClick={onRetryMelody}>
+            다른 멜로디 고르기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="song-result">
+      <div className="song-complete-header">
+        <div className="song-complete-badge">♪ 멜로디 만들기</div>
+        <h2>동요를 만들지 못했어요</h2>
+        <p>{melody ? `${melody.label} 느낌으로 확정한 가사를 노래로 만들어요` : '선택한 예시 동요 느낌으로 만들어요'}</p>
+      </div>
+      <section className="song-reference-card ready">
+        <div>
+          <p className="song-eyebrow">생성 상태</p>
+          <strong>문제가 있으면 다른 예시 동요를 골라 다시 시도해 주세요</strong>
+          <small>생성 요청 또는 동기화 과정에서 오류가 발생했어요.</small>
+          {error ? <em>{error}</em> : null}
+        </div>
+      </section>
+      <div className="song-save-row">
+        <button className="song-regenerate-button" type="button" disabled={saving} onClick={onRetryMelody}>
+          다른 멜로디 고르기
+        </button>
       </div>
     </div>
   );
@@ -1158,85 +1484,50 @@ function DirectInputCard({ active, onApply, onChange, onOpen, value }: { active:
 
 function SongResult({
   onConfirmLyrics,
-  onPlay,
   onRegenerate,
-  onSaveAndGoRoutine,
   generationError,
   lyricsError,
   lyricsConfirmed,
   lyricsLoading,
   lyricsReady,
-  playing,
   preview,
-  progress,
-  referenceAudio,
-  saving,
 }: {
   onConfirmLyrics: () => void;
-  onPlay: () => void;
   onRegenerate: () => void;
-  onSaveAndGoRoutine: () => void;
   generationError: string;
   lyricsError: string;
   lyricsConfirmed: boolean;
   lyricsLoading: boolean;
   lyricsReady: boolean;
-  playing: boolean;
   preview: SongPreview;
-  progress: number;
-  referenceAudio?: { url: string; fileName: string; durationSeconds?: number };
-  saving: boolean;
 }) {
-  const elapsedSeconds = Math.round((progress / 100) * previewDurationSeconds);
-  const canCreateSong = !!referenceAudio && lyricsReady && lyricsConfirmed && !lyricsLoading && !saving;
-  const canConfirmLyrics = lyricsReady && !lyricsConfirmed && !lyricsLoading && !saving;
+  const canConfirmLyrics = lyricsReady && !lyricsConfirmed && !lyricsLoading;
   return (
     <div className="song-result">
       <div className="song-complete-header">
         <div className="song-complete-badge">{lyricsConfirmed ? '★ 가사 확정' : '♪ 가사 만들기'}</div>
-        <h2>{lyricsConfirmed ? '이제 멜로디로 동요를 만들어요' : '가사를 확인해 주세요'}</h2>
-        <p>{lyricsConfirmed ? '선택한 예시 멜로디 느낌으로 완성할게요' : '마음에 들면 가사를 확정해 주세요'}</p>
+        <h2>{lyricsConfirmed ? '가사가 확정됐어요' : '가사를 확인해 주세요'}</h2>
+        <p>{lyricsConfirmed ? '다음 단계에서 멜로디를 고를 수 있어요' : '마음에 들면 가사를 확정하고, 마음에 들지 않으면 다시 만들어요'}</p>
       </div>
       <section className="song-result-card">
         <p className="song-eyebrow">동요 제목</p>
         <h2>{lyricsReady ? preview.title : 'AI 가사를 기다리고 있어요'}</h2>
         {lyricsLoading ? <p className="song-generation-status">AI 가사를 만드는 중이에요...</p> : null}
         {lyricsError ? <p className="song-generation-status warning">{lyricsError}</p> : null}
-        {lyricsConfirmed ? <p className="song-generation-status confirmed">가사가 확정됐어요. 이제 동요를 만들 수 있어요.</p> : null}
+        {lyricsConfirmed ? <p className="song-generation-status confirmed">가사가 확정됐어요. 멜로디 만들기는 다음 단계에서 진행해요.</p> : null}
+        {generationError ? <p className="song-generation-status warning">{generationError}</p> : null}
         {lyricsReady ? (
           <p className="song-lyrics">{preview.lyrics}</p>
         ) : (
           <p className="song-lyrics">AI 가사가 만들어지면 여기에 표시돼요.</p>
         )}
       </section>
-      <section className="song-player-card" aria-label="동요 재생">
-        <button className="song-play-button" type="button" aria-label={playing ? '잠깐 멈춤' : '재생하기'} onClick={onPlay}>
-          {playing ? 'Ⅱ' : '▶'}
-        </button>
-        <div className="song-player-main">
-          <div className="song-progress" aria-label="재생 진행률">
-            <span style={{ width: `${progress}%` }} />
-          </div>
-          <div className="song-time-row">
-            <span>{formatPreviewTime(elapsedSeconds)}</span>
-            <span>{formatPreviewTime(previewDurationSeconds)}</span>
-          </div>
-        </div>
-      </section>
-      <section className={referenceAudio ? 'song-reference-card ready' : 'song-reference-card'}>
-        <div>
-          <p className="song-eyebrow">예시 멜로디</p>
-          <strong>{referenceAudio ? '선택한 멜로디 느낌으로 만들어요' : '이 멜로디는 아직 준비 중이에요'}</strong>
-          <small>{referenceAudio ? '재생 버튼으로 들은 예시 멜로디를 바탕으로 동요를 완성해요' : '다른 멜로디를 선택해 주세요'}</small>
-          {generationError ? <em>{generationError}</em> : null}
-        </div>
-      </section>
       <div className="song-save-row">
-        <button className="song-routine-button" type="button" disabled={!canConfirmLyrics && !canCreateSong} onClick={lyricsConfirmed ? onSaveAndGoRoutine : onConfirmLyrics}>
-          {saving ? '동요를 만드는 중...' : lyricsConfirmed ? '멜로디로 동요 만들기' : lyricsReady ? '이 가사로 확정' : '가사 생성 대기'}
+        <button className="song-routine-button" type="button" disabled={!canConfirmLyrics} onClick={onConfirmLyrics}>
+          {lyricsConfirmed ? '가사 확정 완료' : lyricsReady ? '이 가사로 확정' : '가사 생성 대기'}
         </button>
-        <button className="song-regenerate-button" type="button" disabled={saving || lyricsLoading} onClick={onRegenerate}>
-          {lyricsLoading ? '만드는 중...' : '↻ 가사 다시 만들기'}
+        <button className="song-regenerate-button" type="button" onClick={onRegenerate}>
+          {lyricsLoading ? '↻ 다시 시도' : '↻ 가사 다시 만들기'}
         </button>
       </div>
     </div>
@@ -1703,13 +1994,10 @@ function RoutineOverlay({
 
   if (routine.status === 'cue') {
     return (
-      <PrepScreen
+      <RoutineCueAutoStart
         character={character}
-        childName={childName}
         habit={routine.selectedHabit}
-        hasGeneratedSong={!!routine.selectedSong?.audioUrl || !!routine.selectedSong?.streamAudioUrl}
-        onBeginRoutine={() => void routine.beginRoutine()}
-        onRecordEvent={routine.recordEvent}
+        onBeginRoutine={routine.beginRoutine}
       />
     );
   }
@@ -1766,13 +2054,84 @@ function RoutineOverlay({
   );
 }
 
+function RoutineCueAutoStart({
+  character,
+  habit,
+  onBeginRoutine
+}: {
+  character: Character;
+  habit: HabitTemplate;
+  onBeginRoutine: () => Promise<void>;
+}) {
+  useEffect(() => {
+    void onBeginRoutine();
+  }, [onBeginRoutine]);
+
+  return (
+    <section className="routine-screen">
+      <TopBar character={character} />
+      <RoutineSceneLayer habit={habit} status="cue" />
+    </section>
+  );
+}
+
 type PrepSubState = 'intro' | 'action' | 'confirm' | 'hype' | 'done';
+
+type PrepSpeechPool = {
+  why: string[];
+  action: string[];
+  hype: string[];
+  done: string[];
+};
+
+const prepSpeechByHabit: Partial<Record<HabitId, PrepSpeechPool>> = {
+  wash: {
+    why: ['깨끗한 손이면 더 건강하게 놀 수 있어!'],
+    action: ['소매를 쓱쓱 올려볼까?', '수도꼭지 앞에 서볼까?', '두 손을 앞으로 쭉!', '손을 살랑살랑 흔들어보자!'],
+    hype: ['좋아, 손씻기 준비가 거의 다 됐어!', '우리 노래도 거의 완성되고 있어!'],
+    done: ['이제 노래랑 같이 손을 깨끗하게 씻어보자!']
+  },
+  brush: {
+    why: ['이를 닦으면 입안이 상쾌해지고 치아가 튼튼해져!'],
+    action: ['칫솔을 손에 들어볼까?', '치약을 콩알만큼 짜보자!', '거울 속 내 얼굴을 봐볼까?', '입을 아 크게 벌리는 연습!'],
+    hype: ['좋아, 양치 준비가 착착 되고 있어!', '우리 양치 노래도 거의 다 만들어졌어!'],
+    done: ['이제 노래에 맞춰 반짝반짝 이를 닦아보자!']
+  },
+  tidy: {
+    why: ['장난감이 집으로 돌아가면 방이 넓어지고 다시 찾기도 쉬워!'],
+    action: ['어떤 장난감이 보이는지 찾아볼까?', '장난감 상자를 열어보자!', '어디부터 치울지 눈으로 둘러볼까?', '하나만 먼저 골라볼까?'],
+    hype: ['좋아, 정리할 준비가 됐어!', '정리 노래가 거의 완성되고 있어!'],
+    done: ['이제 노래랑 같이 장난감을 집으로 보내주자!']
+  },
+  clothes: {
+    why: ['옷이 제자리에 있으면 입고 싶은 옷을 쉽게 찾을 수 있어!'],
+    action: ['어떤 옷이 보이는지 찾아볼까?', '옷을 둘 곳을 손으로 가리켜볼까?', '하나만 먼저 골라볼까?'],
+    hype: ['좋아, 옷 정리 준비가 됐어!', '정리 노래가 거의 완성되고 있어!'],
+    done: ['이제 노래랑 같이 옷을 제자리로 보내주자!']
+  },
+  veggie: {
+    why: ['채소를 먹으면 몸이 튼튼하게 자랄 수 있어!'],
+    action: ['맛있게 냠냠 먹는 표정을 지어볼까?', '엄지 척 해볼까?', '한 입 먹을 준비를 해보자!'],
+    hype: ['좋아, 채소 먹을 준비가 됐어!', '채소 노래가 거의 완성되고 있어!'],
+    done: ['이제 노래랑 같이 맛있게 먹어보자!']
+  }
+};
+
+const sleepPrepSpeech: PrepSpeechPool = {
+  why: ['잘 자고 나면 내일 더 신나게 놀 수 있어!'],
+  action: ['이불을 포근하게 펴볼까?', '베개를 톡톡 정리해보자!', '누울 자리를 만들어볼까?', '몸을 천천히 쉬게 해보자.'],
+  hype: ['좋아, 잠잘 준비가 차분히 되고 있어.', '우리 잠자기 노래도 거의 완성됐어.'],
+  done: ['이제 노래를 들으면서 포근하게 쉬어보자.']
+};
 
 function PrepScreen({
   character,
   childName,
   habit,
   hasGeneratedSong,
+  progressLabel = '동요 준비',
+  readyLine = '노래가 준비됐어. 이제 같이 시작하자!',
+  waitingLine = '준비 완료! 기본 동요로 같이 시작하자!',
   onBeginRoutine,
   onRecordEvent
 }: {
@@ -1780,6 +2139,9 @@ function PrepScreen({
   childName: string;
   habit: HabitTemplate;
   hasGeneratedSong: boolean;
+  progressLabel?: string;
+  readyLine?: string;
+  waitingLine?: string;
   onBeginRoutine: () => void;
   onRecordEvent: (type: RoutineEventType) => void;
 }) {
@@ -1793,8 +2155,11 @@ function PrepScreen({
   const actionProgress = subState === 'intro' ? 18 : subState === 'action' ? 44 : subState === 'confirm' ? 68 : subState === 'hype' ? 86 : 100;
   const stepProgress = ((stepIndex + (subState === 'done' ? 1 : actionProgress / 100)) / config.steps.length) * 100;
   const contentProgress = hasGeneratedSong ? 100 : Math.min(96, Math.round(stepProgress));
-  const characterMood = prepMoodForAnim(currentStep.animId, subState);
+  const characterMood: CharacterMood = habit.id === 'brush'
+    ? 'brush_prep'
+    : prepMoodForAnim(currentStep.animId, subState);
   const buddyName = childName.trim() || '친구';
+  const speechPool = prepSpeechByHabit[habit.id] ?? (habit.name.includes('잠') ? sleepPrepSpeech : undefined);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -1841,41 +2206,33 @@ function PrepScreen({
     onBeginRoutine();
   }
 
-  const line = subState === 'intro'
-    ? currentStep.cognitiveLine.text
-    : subState === 'action'
-      ? currentStep.behavioralPrompt.text
-      : subState === 'confirm'
-        ? '좋아, 잘했어!'
-        : subState === 'hype'
-          ? currentStep.emotionalLine.text
-          : hasGeneratedSong
-            ? '노래가 준비됐어. 이제 같이 시작하자!'
-            : '준비 완료! 기본 동요로 같이 시작하자!';
+  const speechLine = prepSpeechLine({
+    fallbackStep: currentStep,
+    hasGeneratedSong,
+    readyLine,
+    speechPool,
+    stepIndex,
+    subState,
+    waitingLine
+  });
 
   return (
     <section className="routine-screen prep-screen">
       <TopBar character={character} />
       <RoutineSceneLayer habit={habit} status="cue" moodOverride={characterMood} />
-      <aside className="prep-panel" aria-label="캐릭터와 함께 준비하기">
-        <div className="prep-eyebrow">
-          <span aria-hidden="true">♪</span>
-          캐릭터와 함께 준비하기
-        </div>
-        <h1>{config.introLine.text}</h1>
-        <p className="prep-child-line">{buddyName}야, {habit.name} 전에 짧게 연습해보자.</p>
+      <div className="prep-speech-bubble" aria-live="polite">
+        <small>{buddyName}와 함께 준비하기</small>
+        <strong>{speechLine}</strong>
+      </div>
+      <aside className="prep-side-panel" aria-label="동요 생성 진행">
         <div className="prep-step-dots" aria-label={`준비 ${stepIndex + 1}/${config.steps.length}`}>
           {config.steps.map((step, index) => (
             <span key={step.id} className={index <= stepIndex ? 'active' : ''} />
           ))}
         </div>
-        <section className="prep-dialogue">
-          <small>{subState === 'intro' ? '왜 할까요?' : subState === 'action' ? '같이 해봐요' : subState === 'hype' ? '응원' : '준비 완료'}</small>
-          <strong>{line}</strong>
-        </section>
         <div className="prep-progress-block">
           <div className="prep-progress-copy">
-            <span>동요 준비</span>
+            <span>{progressLabel}</span>
             <b>{contentProgress}%</b>
           </div>
           <div className="prep-progress-bar" aria-label="콘텐츠 생성 진행률">
@@ -1901,6 +2258,39 @@ function PrepScreen({
       </aside>
     </section>
   );
+}
+
+function prepSpeechLine({
+  fallbackStep,
+  hasGeneratedSong,
+  readyLine,
+  speechPool,
+  stepIndex,
+  subState,
+  waitingLine
+}: {
+  fallbackStep: PrepStep;
+  hasGeneratedSong: boolean;
+  readyLine: string;
+  speechPool?: PrepSpeechPool;
+  stepIndex: number;
+  subState: PrepSubState;
+  waitingLine: string;
+}) {
+  if (subState === 'intro') {
+    return stepIndex === 0 ? '우리 노래를 만드는 중이야!' : (speechPool?.why[0] ?? fallbackStep.cognitiveLine.text);
+  }
+  if (subState === 'action') {
+    const lines = speechPool?.action;
+    return lines?.[stepIndex % lines.length] ?? fallbackStep.behavioralPrompt.text;
+  }
+  if (subState === 'confirm') return '좋아, 잘했어!';
+  if (subState === 'hype') {
+    const lines = speechPool?.hype;
+    return lines?.[stepIndex % lines.length] ?? fallbackStep.emotionalLine.text;
+  }
+  if (hasGeneratedSong) return speechPool?.done[0] ?? readyLine;
+  return waitingLine;
 }
 
 function prepMoodForAnim(animId: PrepAnimId, subState: PrepSubState): CharacterMood {

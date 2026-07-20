@@ -16,6 +16,7 @@ export type CharacterMood =
   | 'stretch'
   | 'yawn'
   | 'mouth_open_wide'
+  | 'brush_prep'
   | 'brush'
   | 'wash'
   | 'eat'
@@ -217,18 +218,20 @@ export function useRoutineSession(profile: ChildProfile, parentPinLast4: string)
   }
 
   async function startSongAudio(song: LocalGeneratedSong | null) {
-    const url = song?.streamAudioUrl ?? song?.audioUrl;
-    if (!url) return false;
-    stopRoutineAudio();
-    try {
-      const audio = new Audio(url);
-      routineAudio.current = audio;
-      await audio.play();
-      return true;
-    } catch {
+    const urls = [song?.audioUrl, song?.streamAudioUrl, song?.sourceAudioUrl].filter(Boolean);
+    if (urls.length === 0) return false;
+    for (const url of urls) {
       stopRoutineAudio();
-      return false;
+      try {
+        const audio = new Audio(url);
+        routineAudio.current = audio;
+        await audio.play();
+        return true;
+      } catch {
+        stopRoutineAudio();
+      }
     }
+    return false;
   }
 
   return {

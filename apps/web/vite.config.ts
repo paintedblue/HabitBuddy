@@ -3,11 +3,13 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const disablePwa = process.env.VITE_DISABLE_PWA === '1';
+
 export default defineConfig({
   envDir: resolve(__dirname, '../..'),
   plugins: [
     react(),
-    VitePWA({
+    !disablePwa && VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['pwa-icon.svg'],
       manifest: {
@@ -30,7 +32,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
       }
     })
-  ],
+  ].filter(Boolean),
   server: {
     host: '0.0.0.0'
   }

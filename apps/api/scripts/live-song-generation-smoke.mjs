@@ -80,7 +80,10 @@ async function main() {
       sunoContinueAtSeconds: 20
     }
   });
-  console.log(`Suno request queued: ${request.id}`);
+  console.log(`Suno request started: ${request.id}${request.externalTaskId ? ` task=${request.externalTaskId}` : ''}`);
+  if (request.status === 'failed') {
+    throw new Error(`Suno generation failed to start: ${request.errorCode || 'unknown'} ${request.errorMessage || ''}`.trim());
+  }
 
   const started = Date.now();
   let latest = request;

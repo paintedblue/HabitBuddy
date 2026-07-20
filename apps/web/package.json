@@ -7,7 +7,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "android:add": "cap add android",
-    "android:sync": "npm run build && node scripts/prune-android-assets.mjs && cap sync android",
+    "android:sync": "VITE_DISABLE_PWA=1 npm run build && node scripts/prune-android-assets.mjs && cap sync android",
     "android:build": "npm run android:sync && cd android && GRADLE_USER_HOME=../.gradle ./gradlew clean assembleDebug",
     "android:diagnose:api": "node scripts/diagnose-android-api.mjs",
     "android:install": "npm run android:build && npm run android:diagnose:api && node scripts/install-android.mjs",

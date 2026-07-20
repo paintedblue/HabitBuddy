@@ -38,7 +38,7 @@ describe('SongsProcessor', () => {
       uploadUrl: 'https://example.com/reference-melodies/princess_bgm_cut.mp3',
       prompt: '[Verse 1]\n공주 동요 가사',
       title: '토리의 양치 공주 동요',
-      continueAt: 20
+      continueAt: 5
     }));
     expect(suno.uploadAndExtend.mock.calls[0][0].style).toContain('princess fairytale');
     expect(songs.markGenerating).toHaveBeenCalledWith('req-princess', 'task-princess');

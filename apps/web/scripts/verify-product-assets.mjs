@@ -10,7 +10,7 @@ const requiredAssets = [
   'public/assets/characters/Waving.fbx',
   'public/assets/characters/RumbaDancing.fbx',
   'public/assets/characters/texture_0.png',
-  'public/assets/characters/fox_brushing_teeth_v4.glb',
+  'public/assets/characters/final_squirrel_brushing_teeth.glb',
   'public/assets/characters/movement/fox_washing_hands.glb',
   'public/assets/characters/squirrel/squirrel_eat_chew_v1.glb',
   'public/assets/characters/char1_mopping_loop_fixed.fbx'
